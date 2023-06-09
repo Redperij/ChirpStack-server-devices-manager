@@ -86,11 +86,29 @@ Test
     Log In    ${USERNAME}    ${PASSWORD}
     Initialise And Open Application Screen    ${APPLICATION}    ${APPLICATION_PROFILE}
     ${res}=    Go To Application Devices    ${APPLICATION}
-
-    #2cf7f1204200708d
     IF  '${res}'=='${True}'
         ${res}=    Devices Table Contains Eui    2cf7f1204200708a
-        Log To Console    Device is ${res}
+        Log To Console    Device with eui 2cf7f1204200708a is ${res}
+    ELSE
+        Fail    Was unable to reach the "${APPLICATION}" app.
+    END
+
+    Go To Applications
+    Go To Application    ${APPLICATION}
+    ${res}=    Go To Application Devices    ${APPLICATION}
+    IF  '${res}'=='${True}'
+        ${res}=    Devices Table Contains Name    Dev1
+        Log To Console    Device name Dev1 is ${res}
+    ELSE
+        Fail    Was unable to reach the "${APPLICATION}" app.
+    END
+
+    Go To Applications
+    Go To Application    ${APPLICATION}
+    ${res}=    Go To Application Devices    ${APPLICATION}
+    IF  '${res}'=='${True}'
+        ${res}=    Devices Table Get Corresponding Name    2cf7f1204200708d
+        Log To Console    Device name for 2cf7f1204200708d is ${res}
     ELSE
         Fail    Was unable to reach the "${APPLICATION}" app.
     END
@@ -285,7 +303,7 @@ Devices Table Contains Eui
     [Return]    ${res}
 
 Devices Table Sheet Contains Eui
-    [Documentation]    Checks a sheet of Devices table for the device with specified eui
+    [Documentation]    Checks a sheet of Devices table for the device with specified eui.
     [Arguments]    ${eui}
     ${res}=    Set Variable    ${False}
     ${res}=    Is Text    ${eui}    0.2s
@@ -296,16 +314,72 @@ Devices Table Contains Name
     [Documentation]    Checks whether table contains the specified device name.
     [Arguments]    ${device_name}
     ${res}=    Set Variable    ${False}
-    #Completely wrong way to do it.
-    #First: table can be located on multiple pages.
-    #Second: "Device1" and "Device12" both contain "Device1" as text, so it must be checked.
-    ${res}=    Is Text    ${device_name}    0.2s
+    ${table_end}=    Set Variable    ${False}
+    ${arrow_index}=    Set Variable    ${1}
+    
+    WHILE  '${table_end}'=='${False}'
+        ${res}=    Devices Table Sheet Contains Name    ${device_name}
+        IF  '${res}'=='${False}'
+            #We always have to press the right arrow. On the first page it is the only one clickable, so index is 1
+            #On all other pages it is second clickable element - thus index is 2.
+            #On the last page we still try to click second element and receive an exception.
+            TRY 
+                Click Element    xpath\=//button[@class\="MuiButtonBase-root MuiIconButton-root MuiIconButton-colorInherit"]    0.5s    False    ${arrow_index}
+                ${arrow_index}=    Set Variable    ${2}
+            EXCEPT
+                ${table_end}=    Set Variable    ${True}
+            END 
+        ELSE
+            ${table_end}=    Set Variable    ${True}
+        END
+    END
     [Return]    ${res}
 
-Device Table Get Corresponding Name
+Devices Table Sheet Contains Name
+    [Documentation]    Checks a sheet of Devices table for the device with specified name.
+    [Arguments]    ${name}
+    ${res}=    Set Variable    ${False}
+
+    Use Table    xpath\=//table[@class\="MuiTable-root"]
+    FOR  ${i}  IN RANGE  ${100}
+        TRY
+            ${candidate}=    Get Cell Text    r?${name}/c2    ${i}    0.2s
+            IF  '${candidate}'=='${name}'
+                ${res}=    Set Variable    ${True}
+                BREAK
+            END
+        EXCEPT
+            BREAK
+        END
+    END
+    
+    [Return]    ${res}
+
+Devices Table Get Corresponding Name
     [Documentation]    Gets a device name corresponding to the specified eui.
     [Arguments]    ${eui}
     ${name}=    Set Variable    ${None}
+    ${res}=    Set Variable    ${False}
+    ${table_end}=    Set Variable    ${False}
+    ${arrow_index}=    Set Variable    ${1}
+    
+    WHILE  '${table_end}'=='${False}'
+        ${res}=    Devices Table Sheet Contains Eui    ${eui}
+        IF  '${res}'=='${False}'
+            #We always have to press the right arrow. On the first page it is the only one clickable, so index is 1
+            #On all other pages it is second clickable element - thus index is 2.
+            #On the last page we still try to click second element and receive an exception.
+            TRY 
+                Click Element    xpath\=//button[@class\="MuiButtonBase-root MuiIconButton-root MuiIconButton-colorInherit"]    0.5s    False    ${arrow_index}
+                ${arrow_index}=    Set Variable    ${2}
+            EXCEPT
+                ${table_end}=    Set Variable    ${True}
+            END 
+        ELSE
+            ${name}=    Get Cell Text    r?${eui}/c2    1    0.2s
+            ${table_end}=    Set Variable    ${True}
+        END
+    END
 
     [Return]    ${name}
 
@@ -315,10 +389,10 @@ Device Table Get Corresponding Name
 #based on the data from the file or google doc.
 #Or it would be better to use Dictionary.
 Read Devices From File
-    #Append To List    ${DEVICE_NAMES}    Device1    Device2    Device3    Device4    Device5
-    #Append To List    ${DEVICE_EUIS}    2cf7f12042007dff    2cf7f1204200708d    2cf7f120420036fe    2cf7f12042007da2    2cf7f12042007a39
-    Append To List    ${DEVICE_NAMES}    ice1    ice2    Device3    Dice4    Devic    Dev5    ice7
-    Append To List    ${DEVICE_EUIS}    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56
+    Append To List    ${DEVICE_NAMES}    Device1    Device2    Device3    Device4    Device5
+    Append To List    ${DEVICE_EUIS}    2cf7f12042007dff    2cf7f1204200708d    2cf7f120420036fe    2cf7f12042007da2    2cf7f12042007a39
+    #Append To List    ${DEVICE_NAMES}    ice1    ice2    Device3    Dice4    Devic    Dev5    ice7
+    #Append To List    ${DEVICE_EUIS}    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56
 
 Start Browser
     Open Browser    ${LOGIN URL}    ${BROWSER}
