@@ -81,6 +81,20 @@ Delete Application
 Rename Devices
     #Searching for a device by uid and editting its name via figuring out the row of the table.
 
+Test
+    Set Config    Delay    ${COMMON_DELAY}
+    Log In    ${USERNAME}    ${PASSWORD}
+    Initialise And Open Application Screen    ${APPLICATION}    ${APPLICATION_PROFILE}
+    ${res}=    Go To Application Devices    ${APPLICATION}
+
+    #2cf7f1204200708d
+    IF  '${res}'=='${True}'
+        ${res}=    Devices Table Contains Eui    2cf7f1204200708a
+        Log To Console    Device is ${res}
+    ELSE
+        Fail    Was unable to reach the "${APPLICATION}" app.
+    END
+
 *** Keywords ***
 Initialise And Open Application Screen
     [Documentation]    Getting to the APPLICATION screen
@@ -119,6 +133,39 @@ Add Device
         ${res}=    Go To Application Devices    ${app_name}
         Run Keyword If    '${res}'=='${False}'    Fail    Was unable to switch to the app devices screen to create a device.
     END
+
+    #Now we have to figure out if device exists.
+    #"Check for name"  MUST CHECK THE WHOLE CELL VALUE!
+    #Check for eui
+    #Exists.
+        #Device already cannot be created.
+        #Check table for corresponding name
+        #If corr_name != name
+            #Check for name
+            #Exists
+                #We are not able to update eui.
+                #Delete the device.
+                #Create from scratch.
+            #Not Exists
+                #Change name of the device.
+                #Check key.
+        #else
+            #The same device - check key.
+    #Not exists.
+        #Check for name
+        #Exists
+            #Wrong eui. We are not able to update it.
+            #Delete the device.
+            #Create from scratch.
+        #Not Exists
+            #Just create the device.
+    
+#    ${same_eui}=    Is Text    ${eui}    0.2s
+#    IF  '${same_eui}'=='${True}'
+#        #Check corresponding name via table
+#    ELSE
+#        
+#    END
 
     ${same_name}=    Is Text    ${name}    0.2s
     ${same_eui}=    Is Text    ${eui}    0.2s
@@ -211,14 +258,67 @@ Generate App Key
     Click Text    Set device-keys
     [Return]    ${app_key}
 
+Devices Table Contains Eui
+    [Documentation]    Checks whether table contains the specified eui.
+    [Arguments]    ${eui}
+    ${res}=    Set Variable    ${False}
+    ${table_end}=    Set Variable    ${False}
+    ${arrow_index}=    Set Variable    ${1}
+    
+    WHILE  '${table_end}'=='${False}'
+        ${res}=    Devices Table Sheet Contains Eui    ${eui}
+        IF  '${res}'=='${False}'
+            #We always have to press the right arrow. On the first page it is the only one clickable, so index is 1
+            #On all other pages it is second clickable element - thus index is 2.
+            #On the last page we still try to click second element and receive an exception.
+            TRY 
+                Click Element    xpath\=//button[@class\="MuiButtonBase-root MuiIconButton-root MuiIconButton-colorInherit"]    0.5s    False    ${arrow_index}
+                ${arrow_index}=    Set Variable    ${2}
+            EXCEPT
+                ${table_end}=    Set Variable    ${True}
+            END 
+        ELSE
+            ${table_end}=    Set Variable    ${True}
+        END
+    END
+    
+    [Return]    ${res}
+
+Devices Table Sheet Contains Eui
+    [Documentation]    Checks a sheet of Devices table for the device with specified eui
+    [Arguments]    ${eui}
+    ${res}=    Set Variable    ${False}
+    ${res}=    Is Text    ${eui}    0.2s
+    [Return]    ${res}
+
+
+Devices Table Contains Name
+    [Documentation]    Checks whether table contains the specified device name.
+    [Arguments]    ${device_name}
+    ${res}=    Set Variable    ${False}
+    #Completely wrong way to do it.
+    #First: table can be located on multiple pages.
+    #Second: "Device1" and "Device12" both contain "Device1" as text, so it must be checked.
+    ${res}=    Is Text    ${device_name}    0.2s
+    [Return]    ${res}
+
+Device Table Get Corresponding Name
+    [Documentation]    Gets a device name corresponding to the specified eui.
+    [Arguments]    ${eui}
+    ${name}=    Set Variable    ${None}
+
+    [Return]    ${name}
+
 #Should be python keyword.
 #Python must set two lists:
 #DEVICE_NAMES and DEVICE_EUIS
 #based on the data from the file or google doc.
 #Or it would be better to use Dictionary.
 Read Devices From File
-    Append To List    ${DEVICE_NAMES}    Device1    Device2    Device3    Device4    Device5
-    Append To List    ${DEVICE_EUIS}    2cf7f12042007dff    2cf7f1204200708d    2cf7f120420036fe    2cf7f12042007da2    2cf7f12042007a39
+    #Append To List    ${DEVICE_NAMES}    Device1    Device2    Device3    Device4    Device5
+    #Append To List    ${DEVICE_EUIS}    2cf7f12042007dff    2cf7f1204200708d    2cf7f120420036fe    2cf7f12042007da2    2cf7f12042007a39
+    Append To List    ${DEVICE_NAMES}    ice1    ice2    Device3    Dice4    Devic    Dev5    ice7
+    Append To List    ${DEVICE_EUIS}    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56
 
 Start Browser
     Open Browser    ${LOGIN URL}    ${BROWSER}
