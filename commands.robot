@@ -10,7 +10,7 @@ Task Teardown   Stop Browser
 
 *** Tasks ***
 Add Devices
-    Set Config    Delay    0
+    Set Config    Delay    ${COMMON_DELAY}
 
     #Should be python keyword.
     #Python must set two lists:
@@ -42,7 +42,7 @@ Add Devices
     END
 
 Delete Devices
-    Set Config    Delay    0
+    Set Config    Delay    ${COMMON_DELAY}
     
     #Should be python keyword.
     #Python must set two lists:
@@ -62,7 +62,7 @@ Delete Devices
     END
 
 Delete All Devices
-    Set Config    Delay    0
+    Set Config    Delay    ${COMMON_DELAY}
     Log In    ${USERNAME}    ${PASSWORD}
     Initialise And Open Application Screen    ${APPLICATION}    ${APPLICATION_PROFILE}
     Go To Application Devices    ${APPLICATION}
@@ -78,7 +78,7 @@ Delete All Devices
     END
 
 Delete Application
-    Set Config    Delay    0
+    Set Config    Delay    ${COMMON_DELAY}
     Log In    ${USERNAME}    ${PASSWORD}
     Initialise And Open Application Screen    ${APPLICATION}    ${APPLICATION_PROFILE}
     ${res}=    Go To Application Devices    ${APPLICATION}
@@ -113,8 +113,10 @@ Setup Application
     Verify Text    Application name
     Type Text    xpath\=//input[@id\="name"]    ${app_name}
     Type Text    xpath\=//input[@id\="description"]    ${app_name}
-    Click Text    Select service-profile    1    0.5s
+    Set Config    Delay    0.1s
+    Click Text    Select service-profile    1
     Click Text    ${app_profile}
+    Set Config    Delay    ${COMMON_DELAY}
     Click Text    Create application
 
 #Device naming convention:
@@ -204,8 +206,10 @@ Create Device
     Type Text    xpath\=//input[@id\="name"]    ${name}
     Type Text    xpath\=//input[@id\="description"]    ${name}
     Type Text    xpath\=//input[@id\="devEUI"]    ${eui}
-    Click Text    Device-profile    Disable frame-counter validation    0.5s
+    Set Config    Delay    0.1s
+    Click Text    Device-profile    Disable frame-counter validation
     Click Text    ${device_profile}
+    Set Config    Delay    ${COMMON_DELAY}
     Click Text    Create device
     
     #NOTE: If device (same eui) exists at least in one app - server won't allow us to create a device.

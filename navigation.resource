@@ -17,6 +17,7 @@ ${APPLICATION_PROFILE}    Lorix1_service
 ${DEVICE_PROFILE}    Metropolia_devices
 @{DEVICE_NAMES}
 @{DEVICE_EUIS}
+${COMMON_DELAY}    0
 
 *** Keywords ***
 #"Go To" keywords provide an easy way to switch to the needed view.
