@@ -12,20 +12,12 @@ Task Teardown   Stop Browser
 Add Devices
     Set Config    Delay    ${COMMON_DELAY}
 
-    #Should be python keyword.
-    #Python must set two lists:
-    #DEVICE_NAMES and DEVICE_EUIS
-    #based on the data from the file or google doc.
     Read Devices From File
 
     Log In    ${USERNAME}    ${PASSWORD}
     Initialise And Open Application Screen    ${APPLICATION}    ${APPLICATION_PROFILE}
 
-    #Now we are in Application screen
-    #Switch to devices and perform the main thing.
     Go To Application Devices    ${APPLICATION}
-    ${app_key}=    Add Device    ${APPLICATION}    Device3    2cf7f120420036fe    ${DEVICE_PROFILE}
-    Log To Console    \nReceived: [${app_key}]
     
     ${dev_num}=    Get Length    ${DEVICE_NAMES}
     @{app_keys}=    Create List
@@ -44,10 +36,6 @@ Add Devices
 Delete Devices
     Set Config    Delay    ${COMMON_DELAY}
     
-    #Should be python keyword.
-    #Python must set two lists:
-    #DEVICE_NAMES and DEVICE_EUIS
-    #based on the data from the file or google doc.
     Read Devices From File
 
     Log In    ${USERNAME}    ${PASSWORD}
@@ -68,8 +56,6 @@ Delete All Devices
     Go To Application Devices    ${APPLICATION}
 
     Use Table    xpath\=//table[@class\="MuiTable-root"]
-    #nope, clicks somewhere else.
-    #Click Cell    r1c2
     ${stop}=    Is Text    0-0 of 0
     WHILE  '${stop}'=='${False}'
         ${dev_name}=    Get Cell Text    r1c2
@@ -177,17 +163,13 @@ Update Device
     [Arguments]    ${app_name}    ${device_name}
     ${res}=    Go To Application Device Keys    ${app_name}    ${device_name}
     IF  '${res}'=='${True}'
-        #Now we need to get the app key.
+        #Checking the app key.
         Verify Text    Application key
-        #Click Element    xpath\=//*[@title\="Generate random key."]
         TRY
             ${app_key}=    Get Input Value    xpath\=//input[@id\="nwkKey"]    1    1s
         EXCEPT
             #We don't have an app key, what a shame.
-            #Now we need to get the app key.
-            Click Element    xpath\=//*[@title\="Generate random key."]
-            ${app_key}=    Get Input Value    xpath\=//input[@id\="nwkKey"]
-            Click Text    Set device-keys
+            ${app_key}=    Generate App Key
         END
         Go To Application Devices    ${app_name}        
     ELSE
@@ -218,14 +200,22 @@ Create Device
     #Implement try-catch on "Verify Text    Application key"
     #Actually, it won't be a good solution, we really have to check if something messed up upon the creation.
     
-    #Move app key to seperate keyword.
-    #Now we need to get the app key.
+    ${app_key}=    Generate App Key
+    [Return]    ${app_key}
+
+Generate App Key
+    [Documentation]    Generates app key if called from the device's "Keys" view.
     Verify Text    Application key
     Click Element    xpath\=//*[@title\="Generate random key."]
     ${app_key}=    Get Input Value    xpath\=//input[@id\="nwkKey"]
     Click Text    Set device-keys
     [Return]    ${app_key}
 
+#Should be python keyword.
+#Python must set two lists:
+#DEVICE_NAMES and DEVICE_EUIS
+#based on the data from the file or google doc.
+#Or it would be better to use Dictionary.
 Read Devices From File
     Append To List    ${DEVICE_NAMES}    Device1    Device2    Device3    Device4    Device5
     Append To List    ${DEVICE_EUIS}    2cf7f12042007dff    2cf7f1204200708d    2cf7f120420036fe    2cf7f12042007da2    2cf7f12042007a39
