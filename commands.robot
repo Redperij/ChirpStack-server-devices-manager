@@ -46,7 +46,9 @@ Delete Devices
     FOR  ${i}  IN RANGE  ${dev_num}
         ${dev_name}=    Get From List    ${DEVICE_NAMES}    ${i}
         Delete Device    ${APPLICATION}    ${dev_name}
-        Verify No Text    ${dev_name}
+        ${res}=    Devices Table Contains Name    ${APPLICATION}    ${dev_name}
+        Run Keyword If    '${res}'=='${True}'    Fail    Was unable to delete device "${dev_name}", aborting.
+        #Verify No Text    ${dev_name}
     END
 
 Delete All Devices
@@ -87,27 +89,23 @@ Test
     Initialise And Open Application Screen    ${APPLICATION}    ${APPLICATION_PROFILE}
     ${res}=    Go To Application Devices    ${APPLICATION}
     IF  '${res}'=='${True}'
-        ${res}=    Devices Table Contains Eui    2cf7f1204200708a
-        Log To Console    Device with eui 2cf7f1204200708a is ${res}
+        ${res}=    Devices Table Contains Eui    ${APPLICATION}    2cf7f12042007da2    ${False}
+        Log To Console    Device with eui 2cf7f12042007da2 is ${res}
     ELSE
         Fail    Was unable to reach the "${APPLICATION}" app.
     END
 
-    Go To Applications
-    Go To Application    ${APPLICATION}
-    ${res}=    Go To Application Devices    ${APPLICATION}
+    ${res}=    Devices Table Switch To First Page    ${APPLICATION}
     IF  '${res}'=='${True}'
-        ${res}=    Devices Table Contains Name    Dev1
-        Log To Console    Device name Dev1 is ${res}
+        ${res}=    Devices Table Contains Name    ${APPLICATION}    Device5    ${False}
+        Log To Console    Device name Device5 is ${res}
     ELSE
         Fail    Was unable to reach the "${APPLICATION}" app.
     END
 
-    Go To Applications
-    Go To Application    ${APPLICATION}
-    ${res}=    Go To Application Devices    ${APPLICATION}
+    ${res}=    Devices Table Switch To First Page    ${APPLICATION}
     IF  '${res}'=='${True}'
-        ${res}=    Devices Table Get Corresponding Name    2cf7f1204200708d
+        ${res}=    Devices Table Get Corresponding Name    ${APPLICATION}    2cf7f1204200708d    ${False}
         Log To Console    Device name for 2cf7f1204200708d is ${res}
     ELSE
         Fail    Was unable to reach the "${APPLICATION}" app.
@@ -153,59 +151,41 @@ Add Device
     END
 
     #Now we have to figure out if device exists.
-    #"Check for name"  MUST CHECK THE WHOLE CELL VALUE!
-    #Check for eui
-    #Exists.
-        #Device already cannot be created.
-        #Check table for corresponding name
-        #If corr_name != name
-            #Check for name
-            #Exists
-                #We are not able to update eui.
-                #Delete the device.
-                #Create from scratch.
-            #Not Exists
-                #Change name of the device.
-                #Check key.
-        #else
-            #The same device - check key.
-    #Not exists.
-        #Check for name
-        #Exists
-            #Wrong eui. We are not able to update it.
-            #Delete the device.
-            #Create from scratch.
-        #Not Exists
-            #Just create the device.
-    
-#    ${same_eui}=    Is Text    ${eui}    0.2s
-#    IF  '${same_eui}'=='${True}'
-#        #Check corresponding name via table
-#    ELSE
-#        
-#    END
-
-    ${same_name}=    Is Text    ${name}    0.2s
-    ${same_eui}=    Is Text    ${eui}    0.2s
-    #We have the same device configured - just get the app-key.
-    IF  '${same_name}'=='${True}' and '${same_eui}'=='${True}'
-        ${app_key}=    Update Device    ${app_name}    ${name}
-    
-    #We have the same name, but wrong eui - purge existing device and set the new one.
-    #Server doesn't allow to have the same name.
-    ELSE IF    '${same_name}'=='${True}' and '${same_eui}'=='${False}'
-        Delete Device    ${app_name}    ${name}
-        ${same_name}=    Is Text    ${name}    0.2s
-        ${same_eui}=    Is Text    ${eui}    0.2s
-        Run Keyword If    '${same_name}'=='${True}' and '${same_eui}'=='${True}'    Fail    Device ${name} was not deleted.
-        ${app_key}=    Create Device    ${name}    ${eui}    ${device_profile}
-    
-    #Same eui, but not the name. What a nightmare to handle.
-    ELSE IF    '${same_name}'=='${False}' and '${same_eui}'=='${True}'
-        Fail    I DON'T WANT TO HANDLE THE SAME EUI WITH DIFFERENT NAMES!\nWHAT A MESS!\nHOW YOU ENDED UP IN THIS SITUATION ANYWAY!?
-
+    ${same_eui}=    Devices Table Contains Eui    ${app_name}    ${eui}
+    IF  '${same_eui}'=='${True}'
+        ${corr_name}=    Devices Table Get Corresponding Name    ${app_name}    ${eui}
+        IF  '${corr_name}'!='${name}'
+            ${same_name}=    Devices Table Contains Name    ${app_name}    ${name}
+            IF  '${same_name}'=='${True}'
+                #We have same eui not in the same row with the same name
+                #Give a warning, do nothing.
+                ${app_key}=    Update Device    ${app_name}    ${corr_name}
+                Devices Table Contains Eui    ${app_name}    ${eui}    ${False}
+                Run Keyword And Warn On Failure    Fail    Device's '${name}' EUI (${eui}) is held by '${corr_name}' device.\nApp key is given for the '${corr_name}' device.
+            ELSE
+                #Wrong name.
+                #Delete the device for now, but just rename it later on.
+                Delete Device    ${app_name}    ${corr_name}
+                ${app_key}=    Create Device    ${name}    ${eui}    ${device_profile}
+            END
+            
+            
+        ELSE
+            #Device already exists
+            ${app_key}=    Update Device    ${app_name}    ${name}
+        END
+        
     ELSE
-        ${app_key}=    Create Device    ${name}    ${eui}    ${device_profile}
+        ${same_name}=    Devices Table Contains Name    ${app_name}    ${name}
+        IF  '${same_name}'=='${True}'
+            #Wrong eui
+            Delete Device    ${app_name}    ${name}
+            ${app_key}=    Create Device    ${name}    ${eui}    ${device_profile}
+        ELSE
+            #No such device
+            ${app_key}=    Create Device    ${name}    ${eui}    ${device_profile}
+        END
+        
     END
     
     [Return]    ${app_key}    
@@ -215,6 +195,8 @@ Delete Device
     [Documentation]    Deletes device from the specified app.
     ...    Does nothing if device was not found.
     [Arguments]    ${app_name}    ${device_name}
+    Devices Table Switch To First Page    ${app_name}
+    Devices Table Contains Name    ${app_name}    ${device_name}    ${False}
     ${res}=    Go To Application Device    ${app_name}    ${device_name}
     IF  '${res}'=='${True}'
         Click Text    Delete
@@ -226,6 +208,8 @@ Update Device
     [Documentation]    Basically, just checks/creates the device app-key.
     ...    Always returns view to the "Application Devices"
     [Arguments]    ${app_name}    ${device_name}
+    Devices Table Switch To First Page    ${app_name}
+    Devices Table Contains Name    ${app_name}    ${device_name}    ${False}
     ${res}=    Go To Application Device Keys    ${app_name}    ${device_name}
     IF  '${res}'=='${True}'
         #Checking the app key.
@@ -238,7 +222,8 @@ Update Device
         END
         Go To Application Devices    ${app_name}        
     ELSE
-        Fail    Was unable to update the ${device_name} device. Does it actually exist?
+        Run Keyword And Warn On Failure    Fail    Was unable to update the ${device_name} device. Does it actually exist?
+        ${app_key}=    Set Variable    ERROR:${device_name} unaccessible.
     END
     [Return]    ${app_key}
 
@@ -278,10 +263,12 @@ Generate App Key
 
 Devices Table Contains Eui
     [Documentation]    Checks whether table contains the specified eui.
-    [Arguments]    ${eui}
+    [Arguments]    ${app_name}    ${eui}    ${return}=${True}
     ${res}=    Set Variable    ${False}
     ${table_end}=    Set Variable    ${False}
     ${arrow_index}=    Set Variable    ${1}
+
+    Devices Table Switch To First Page    ${app_name}
     
     WHILE  '${table_end}'=='${False}'
         ${res}=    Devices Table Sheet Contains Eui    ${eui}
@@ -300,6 +287,7 @@ Devices Table Contains Eui
         END
     END
     
+    Run Keyword If    '${return}'=='${True}'    Devices Table Switch To First Page    ${app_name}
     [Return]    ${res}
 
 Devices Table Sheet Contains Eui
@@ -312,10 +300,12 @@ Devices Table Sheet Contains Eui
 
 Devices Table Contains Name
     [Documentation]    Checks whether table contains the specified device name.
-    [Arguments]    ${device_name}
+    [Arguments]    ${app_name}    ${device_name}    ${return}=${True}
     ${res}=    Set Variable    ${False}
     ${table_end}=    Set Variable    ${False}
     ${arrow_index}=    Set Variable    ${1}
+
+    Devices Table Switch To First Page    ${app_name}
     
     WHILE  '${table_end}'=='${False}'
         ${res}=    Devices Table Sheet Contains Name    ${device_name}
@@ -333,6 +323,7 @@ Devices Table Contains Name
             ${table_end}=    Set Variable    ${True}
         END
     END
+    Run Keyword If    '${return}'=='${True}'    Devices Table Switch To First Page    ${app_name}
     [Return]    ${res}
 
 Devices Table Sheet Contains Name
@@ -357,11 +348,14 @@ Devices Table Sheet Contains Name
 
 Devices Table Get Corresponding Name
     [Documentation]    Gets a device name corresponding to the specified eui.
-    [Arguments]    ${eui}
+    [Arguments]    ${app_name}    ${eui}    ${return}=${True}
     ${name}=    Set Variable    ${None}
     ${res}=    Set Variable    ${False}
     ${table_end}=    Set Variable    ${False}
     ${arrow_index}=    Set Variable    ${1}
+
+    Devices Table Switch To First Page    ${app_name}
+    Use Table    xpath\=//table[@class\="MuiTable-root"]
     
     WHILE  '${table_end}'=='${False}'
         ${res}=    Devices Table Sheet Contains Eui    ${eui}
@@ -376,12 +370,22 @@ Devices Table Get Corresponding Name
                 ${table_end}=    Set Variable    ${True}
             END 
         ELSE
+            Log To Console    Getting corr name for: ${eui}\n
             ${name}=    Get Cell Text    r?${eui}/c2    1    0.2s
             ${table_end}=    Set Variable    ${True}
         END
     END
-
+    Run Keyword If    '${return}'=='${True}'    Devices Table Switch To First Page    ${app_name}
     [Return]    ${name}
+
+Devices Table Switch To First Page
+    [Documentation]    Unconventionally swithces to the first page of devices table of specified application.
+    #Can be done via pressing arrow in opposite direction, but it may take longer in case if there are a lot of entries.
+    [Arguments]    ${app_name}
+    Go To Applications
+    Go To Application    ${app_name}
+    ${res}=    Go To Application Devices    ${app_name}
+    [Return]    ${res}
 
 #Should be python keyword.
 #Python must set two lists:
@@ -389,10 +393,16 @@ Devices Table Get Corresponding Name
 #based on the data from the file or google doc.
 #Or it would be better to use Dictionary.
 Read Devices From File
-    Append To List    ${DEVICE_NAMES}    Device1    Device2    Device3    Device4    Device5
-    Append To List    ${DEVICE_EUIS}    2cf7f12042007dff    2cf7f1204200708d    2cf7f120420036fe    2cf7f12042007da2    2cf7f12042007a39
-    #Append To List    ${DEVICE_NAMES}    ice1    ice2    Device3    Dice4    Devic    Dev5    ice7
+    #Append To List    ${DEVICE_NAMES}    Device1    Device2    Device3    Device4    Device5
+    #Append To List    ${DEVICE_EUIS}    2cf7f12042007dff    2cf7f1204200708d    2cf7f120420036fe    2cf7f12042007da2    2cf7f12042007a39
+    #Append To List    ${DEVICE_NAMES}    ice1    ice2    Devic3    Dice4    Devic    Dev5    ice7
     #Append To List    ${DEVICE_EUIS}    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56
+    #Append To List    ${DEVICE_NAMES}    ice12    ice32    Devc    Dice    Devic43    De    ic7    ice1    ice2    Devic3    Dice4    Devic    Dev5    ice7
+    #Append To List    ${DEVICE_EUIS}    2ca7f12042007fff    2af7f1234200708d    12f7f120420036fe    2c37f12052007da2    2a57f12042007a90    2cf7312042007a1a    2cf7c12942007a56    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56
+    Append To List    ${DEVICE_NAMES}    Device1    Device2    Device3    Device4    Device5    ice12    ice32    Devc    Dice    Devic43    De    ic7    ice1    ice2    Devic3    Dice4    Devic    Dev5    ice7    art    abba    Device200    f
+    Append To List    ${DEVICE_EUIS}    2cf7f12042007dff    2cf7f1204200708d    2cf7f120420036fe    2cf7f12042007da2    2cf7f12042007a39    2ca7f12042007fff    2af7f1234200708d    12f7f120420036fe    2c37f12052007da2    2a57f12042007a90    2cf7312042007a1a    2cf7c12942007a56    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56    2afba1204200708d    2abba1abba00708d    2cf7312ddda07a1a    ffffffffff007da2
+
+
 
 Start Browser
     Open Browser    ${LOGIN URL}    ${BROWSER}
