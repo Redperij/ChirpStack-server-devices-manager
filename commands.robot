@@ -105,7 +105,7 @@ Test
 
     ${res}=    Devices Table Switch To First Page    ${APPLICATION}
     IF  '${res}'=='${True}'
-        ${res}=    Devices Table Get Corresponding Name    ${APPLICATION}    2cf7f1204200708d    ${False}
+        ${res}=    Devices Table Get Corresponding Name    ${APPLICATION}    2cf7f1204200708d    ${False}    ${True}
         Log To Console    Device name for 2cf7f1204200708d is ${res}
     ELSE
         Fail    Was unable to reach the "${APPLICATION}" app.
@@ -151,17 +151,18 @@ Add Device
     END
 
     #Now we have to figure out if device exists.
-    ${same_eui}=    Devices Table Contains Eui    ${app_name}    ${eui}
+    ${same_eui}=    Devices Table Contains Eui    ${app_name}    ${eui}    ${False}
     IF  '${same_eui}'=='${True}'
-        ${corr_name}=    Devices Table Get Corresponding Name    ${app_name}    ${eui}
+        ${corr_name}=    Devices Table Get Corresponding Name    ${app_name}    ${eui}    ${False}    ${True}
         IF  '${corr_name}'!='${name}'
-            ${same_name}=    Devices Table Contains Name    ${app_name}    ${name}
+            ${same_name}=    Devices Table Contains Name    ${app_name}    ${name}    ${False}
             IF  '${same_name}'=='${True}'
                 #We have same eui not in the same row with the same name
                 #Give a warning, do nothing.
-                ${app_key}=    Update Device    ${app_name}    ${corr_name}
+                #${app_key}=    Update Device    ${app_name}    ${corr_name}
+                ${app_key}=    Set Variable    ERROR:"'${eui}' is associated with '${corr_name}' device. Device '${name}' cannot be created."
                 Devices Table Contains Eui    ${app_name}    ${eui}    ${False}
-                Run Keyword And Warn On Failure    Fail    Device's '${name}' EUI (${eui}) is held by '${corr_name}' device.\nApp key is given for the '${corr_name}' device.
+                Run Keyword And Warn On Failure    Fail    Device's '${name}' EUI (${eui}) is held by '${corr_name}' device.
             ELSE
                 #Wrong name.
                 #Delete the device for now, but just rename it later on.
@@ -172,14 +173,14 @@ Add Device
             
         ELSE
             #Device already exists
-            ${app_key}=    Update Device    ${app_name}    ${name}
+            ${app_key}=    Update Device    ${app_name}    ${name}    ${True}
         END
         
     ELSE
-        ${same_name}=    Devices Table Contains Name    ${app_name}    ${name}
+        ${same_name}=    Devices Table Contains Name    ${app_name}    ${name}    ${False}
         IF  '${same_name}'=='${True}'
             #Wrong eui
-            Delete Device    ${app_name}    ${name}
+            Delete Device    ${app_name}    ${name}    ${True}
             ${app_key}=    Create Device    ${name}    ${eui}    ${device_profile}
         ELSE
             #No such device
@@ -194,9 +195,9 @@ Add Device
 Delete Device
     [Documentation]    Deletes device from the specified app.
     ...    Does nothing if device was not found.
-    [Arguments]    ${app_name}    ${device_name}
-    Devices Table Switch To First Page    ${app_name}
-    Devices Table Contains Name    ${app_name}    ${device_name}    ${False}
+    [Arguments]    ${app_name}    ${device_name}    ${on_screen}=${False}
+    Run Keyword If    '${on_screen}'=='${False}'    Devices Table Switch To First Page    ${app_name}
+    Run Keyword If    '${on_screen}'=='${False}'    Devices Table Contains Name    ${app_name}    ${device_name}    ${False}
     ${res}=    Go To Application Device    ${app_name}    ${device_name}
     IF  '${res}'=='${True}'
         Click Text    Delete
@@ -207,9 +208,9 @@ Delete Device
 Update Device
     [Documentation]    Basically, just checks/creates the device app-key.
     ...    Always returns view to the "Application Devices"
-    [Arguments]    ${app_name}    ${device_name}
-    Devices Table Switch To First Page    ${app_name}
-    Devices Table Contains Name    ${app_name}    ${device_name}    ${False}
+    [Arguments]    ${app_name}    ${device_name}    ${on_screen}=${False}
+    Run Keyword If    '${on_screen}'=='${False}'    Devices Table Switch To First Page    ${app_name}
+    Run Keyword If    '${on_screen}'=='${False}'    Devices Table Contains Name    ${app_name}    ${device_name}    ${False}
     ${res}=    Go To Application Device Keys    ${app_name}    ${device_name}
     IF  '${res}'=='${True}'
         #Checking the app key.
@@ -222,8 +223,8 @@ Update Device
         END
         Go To Application Devices    ${app_name}        
     ELSE
-        Run Keyword And Warn On Failure    Fail    Was unable to update the ${device_name} device. Does it actually exist?
-        ${app_key}=    Set Variable    ERROR:${device_name} unaccessible.
+        Run Keyword And Warn On Failure    Fail    Was unable to update the '${device_name}' device. Does it actually exist?
+        ${app_key}=    Set Variable    ERROR:"'${device_name}' unaccessible."
     END
     [Return]    ${app_key}
 
@@ -261,132 +262,6 @@ Generate App Key
     Click Text    Set device-keys
     [Return]    ${app_key}
 
-Devices Table Contains Eui
-    [Documentation]    Checks whether table contains the specified eui.
-    [Arguments]    ${app_name}    ${eui}    ${return}=${True}
-    ${res}=    Set Variable    ${False}
-    ${table_end}=    Set Variable    ${False}
-    ${arrow_index}=    Set Variable    ${1}
-
-    Devices Table Switch To First Page    ${app_name}
-    
-    WHILE  '${table_end}'=='${False}'
-        ${res}=    Devices Table Sheet Contains Eui    ${eui}
-        IF  '${res}'=='${False}'
-            #We always have to press the right arrow. On the first page it is the only one clickable, so index is 1
-            #On all other pages it is second clickable element - thus index is 2.
-            #On the last page we still try to click second element and receive an exception.
-            TRY 
-                Click Element    xpath\=//button[@class\="MuiButtonBase-root MuiIconButton-root MuiIconButton-colorInherit"]    0.5s    False    ${arrow_index}
-                ${arrow_index}=    Set Variable    ${2}
-            EXCEPT
-                ${table_end}=    Set Variable    ${True}
-            END 
-        ELSE
-            ${table_end}=    Set Variable    ${True}
-        END
-    END
-    
-    Run Keyword If    '${return}'=='${True}'    Devices Table Switch To First Page    ${app_name}
-    [Return]    ${res}
-
-Devices Table Sheet Contains Eui
-    [Documentation]    Checks a sheet of Devices table for the device with specified eui.
-    [Arguments]    ${eui}
-    ${res}=    Set Variable    ${False}
-    ${res}=    Is Text    ${eui}    0.2s
-    [Return]    ${res}
-
-
-Devices Table Contains Name
-    [Documentation]    Checks whether table contains the specified device name.
-    [Arguments]    ${app_name}    ${device_name}    ${return}=${True}
-    ${res}=    Set Variable    ${False}
-    ${table_end}=    Set Variable    ${False}
-    ${arrow_index}=    Set Variable    ${1}
-
-    Devices Table Switch To First Page    ${app_name}
-    
-    WHILE  '${table_end}'=='${False}'
-        ${res}=    Devices Table Sheet Contains Name    ${device_name}
-        IF  '${res}'=='${False}'
-            #We always have to press the right arrow. On the first page it is the only one clickable, so index is 1
-            #On all other pages it is second clickable element - thus index is 2.
-            #On the last page we still try to click second element and receive an exception.
-            TRY 
-                Click Element    xpath\=//button[@class\="MuiButtonBase-root MuiIconButton-root MuiIconButton-colorInherit"]    0.5s    False    ${arrow_index}
-                ${arrow_index}=    Set Variable    ${2}
-            EXCEPT
-                ${table_end}=    Set Variable    ${True}
-            END 
-        ELSE
-            ${table_end}=    Set Variable    ${True}
-        END
-    END
-    Run Keyword If    '${return}'=='${True}'    Devices Table Switch To First Page    ${app_name}
-    [Return]    ${res}
-
-Devices Table Sheet Contains Name
-    [Documentation]    Checks a sheet of Devices table for the device with specified name.
-    [Arguments]    ${name}
-    ${res}=    Set Variable    ${False}
-
-    Use Table    xpath\=//table[@class\="MuiTable-root"]
-    FOR  ${i}  IN RANGE  ${100}
-        TRY
-            ${candidate}=    Get Cell Text    r?${name}/c2    ${i}    0.2s
-            IF  '${candidate}'=='${name}'
-                ${res}=    Set Variable    ${True}
-                BREAK
-            END
-        EXCEPT
-            BREAK
-        END
-    END
-    
-    [Return]    ${res}
-
-Devices Table Get Corresponding Name
-    [Documentation]    Gets a device name corresponding to the specified eui.
-    [Arguments]    ${app_name}    ${eui}    ${return}=${True}
-    ${name}=    Set Variable    ${None}
-    ${res}=    Set Variable    ${False}
-    ${table_end}=    Set Variable    ${False}
-    ${arrow_index}=    Set Variable    ${1}
-
-    Devices Table Switch To First Page    ${app_name}
-    Use Table    xpath\=//table[@class\="MuiTable-root"]
-    
-    WHILE  '${table_end}'=='${False}'
-        ${res}=    Devices Table Sheet Contains Eui    ${eui}
-        IF  '${res}'=='${False}'
-            #We always have to press the right arrow. On the first page it is the only one clickable, so index is 1
-            #On all other pages it is second clickable element - thus index is 2.
-            #On the last page we still try to click second element and receive an exception.
-            TRY 
-                Click Element    xpath\=//button[@class\="MuiButtonBase-root MuiIconButton-root MuiIconButton-colorInherit"]    0.5s    False    ${arrow_index}
-                ${arrow_index}=    Set Variable    ${2}
-            EXCEPT
-                ${table_end}=    Set Variable    ${True}
-            END 
-        ELSE
-            Log To Console    Getting corr name for: ${eui}\n
-            ${name}=    Get Cell Text    r?${eui}/c2    1    0.2s
-            ${table_end}=    Set Variable    ${True}
-        END
-    END
-    Run Keyword If    '${return}'=='${True}'    Devices Table Switch To First Page    ${app_name}
-    [Return]    ${name}
-
-Devices Table Switch To First Page
-    [Documentation]    Unconventionally swithces to the first page of devices table of specified application.
-    #Can be done via pressing arrow in opposite direction, but it may take longer in case if there are a lot of entries.
-    [Arguments]    ${app_name}
-    Go To Applications
-    Go To Application    ${app_name}
-    ${res}=    Go To Application Devices    ${app_name}
-    [Return]    ${res}
-
 #Should be python keyword.
 #Python must set two lists:
 #DEVICE_NAMES and DEVICE_EUIS
@@ -399,9 +274,8 @@ Read Devices From File
     #Append To List    ${DEVICE_EUIS}    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56
     #Append To List    ${DEVICE_NAMES}    ice12    ice32    Devc    Dice    Devic43    De    ic7    ice1    ice2    Devic3    Dice4    Devic    Dev5    ice7
     #Append To List    ${DEVICE_EUIS}    2ca7f12042007fff    2af7f1234200708d    12f7f120420036fe    2c37f12052007da2    2a57f12042007a90    2cf7312042007a1a    2cf7c12942007a56    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56
-    Append To List    ${DEVICE_NAMES}    Device1    Device2    Device3    Device4    Device5    ice12    ice32    Devc    Dice    Devic43    De    ic7    ice1    ice2    Devic3    Dice4    Devic    Dev5    ice7    art    abba    Device200    f
-    Append To List    ${DEVICE_EUIS}    2cf7f12042007dff    2cf7f1204200708d    2cf7f120420036fe    2cf7f12042007da2    2cf7f12042007a39    2ca7f12042007fff    2af7f1234200708d    12f7f120420036fe    2c37f12052007da2    2a57f12042007a90    2cf7312042007a1a    2cf7c12942007a56    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56    2afba1204200708d    2abba1abba00708d    2cf7312ddda07a1a    ffffffffff007da2
-
+    Append To List    ${DEVICE_NAMES}    Device1    Device2    Device3    Device4    Device5    ice12    ice32    Devc    Dice    Devic43    De    ic7    ice1    ice2    Devic3    Dice4    Devic    Dev5    ice7    art    abba    Device200    f    DD
+    Append To List    ${DEVICE_EUIS}    2cf7f12042007dff    2cf7f1204200708d    2cf7f120420036fe    2cf7f12042007da2    2cf7f12042007a39    2ca7f12042007fff    2af7f1234200708d    12f7f120420036fe    2c37f12052007da2    2a57f12042007a90    2cf7312042007a1a    2cf7c12942007a56    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56    2afba1204200708d    2abba1abba00708d    2cf7312ddda07a1a    ffffffffff007da2    4ef167e594428eba
 
 
 Start Browser
