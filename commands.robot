@@ -46,7 +46,7 @@ Delete Devices
     FOR  ${i}  IN RANGE  ${dev_num}
         ${dev_name}=    Get From List    ${DEVICE_NAMES}    ${i}
         Delete Device    ${APPLICATION}    ${dev_name}
-        ${res}=    Devices Table Contains Name    ${APPLICATION}    ${dev_name}
+        ${res}=    Devices Table Contains Name    ${APPLICATION}    ${dev_name}    ${False}
         Run Keyword If    '${res}'=='${True}'    Fail    Was unable to delete device "${dev_name}", aborting.
         #Verify No Text    ${dev_name}
     END
@@ -58,10 +58,10 @@ Delete All Devices
     Go To Application Devices    ${APPLICATION}
 
     Use Table    xpath\=//table[@class\="MuiTable-root"]
-    ${stop}=    Is Text    0-0 of 0
+    ${stop}=    Is Text    0-0 of 0    0.2s
     WHILE  '${stop}'=='${False}'
         ${dev_name}=    Get Cell Text    r1c2
-        Delete Device    ${APPLICATION}    ${dev_name}
+        Delete Device    ${APPLICATION}    ${dev_name}    ${True}
         ${stop}=    Is Text    0-0 of 0    0.5s
     END
 
@@ -129,7 +129,7 @@ Setup Application
     Verify Text    Application name
     Type Text    xpath\=//input[@id\="name"]    ${app_name}
     Type Text    xpath\=//input[@id\="description"]    ${app_name}
-    Set Config    Delay    0.1s
+    Set Config    Delay    0.2s
     Click Text    Select service-profile    1
     Click Text    ${app_profile}
     Set Config    Delay    ${COMMON_DELAY}
@@ -191,7 +191,6 @@ Add Device
     
     [Return]    ${app_key}    
 
-#Figure it out by eui, use the table.
 Delete Device
     [Documentation]    Deletes device from the specified app.
     ...    Does nothing if device was not found.
@@ -204,7 +203,6 @@ Delete Device
         Close Alert    Accept    5s
     END
 
-#Figure it out by eui, use the table.
 Update Device
     [Documentation]    Basically, just checks/creates the device app-key.
     ...    Always returns view to the "Application Devices"
@@ -239,7 +237,7 @@ Create Device
     Type Text    xpath\=//input[@id\="name"]    ${name}
     Type Text    xpath\=//input[@id\="description"]    ${name}
     Type Text    xpath\=//input[@id\="devEUI"]    ${eui}
-    Set Config    Delay    0.1s
+    Set Config    Delay    0.2s
     Click Text    Device-profile    Disable frame-counter validation
     Click Text    ${device_profile}
     Set Config    Delay    ${COMMON_DELAY}
@@ -251,7 +249,14 @@ Create Device
     #Implement try-catch on "Verify Text    Application key"
     #Actually, it won't be a good solution, we really have to check if something messed up upon the creation.
     
-    ${app_key}=    Generate App Key
+    ${f_device_created}=    Is Text    Application key    1s
+    IF  '${f_device_created}'=='${True}'
+        ${app_key}=    Generate App Key
+    ELSE
+        Run Keyword And Warn On Failure    Fail    Was not able to create device '${name}' (${eui}).\nProbably EUI is held by the other app.   
+        ${app_key}=    Set Variable    ERROR:"Was not able to create device '${name}' (${eui}).\nHint: It is possible that EUI is occupied by the device in other application."    
+    END
+    
     [Return]    ${app_key}
 
 Generate App Key
