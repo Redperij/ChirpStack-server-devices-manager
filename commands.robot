@@ -12,7 +12,8 @@ Task Teardown   Stop Browser
 Add Devices
     Set Config    Delay    ${COMMON_DELAY}
 
-    Read Devices From File
+    &{d}=    Read Devices From File
+    Parse Devices Dictionary    &{d}
 
     Log In    ${USERNAME}    ${PASSWORD}
     Initialise And Open Application Screen    ${APPLICATION}    ${APPLICATION_PROFILE}
@@ -33,10 +34,15 @@ Add Devices
         Log To Console    [${app_key}]\n
     END
 
+    &{d}=    Create Dictionary From Lists    ${DEVICE_EUIS}    ${app_keys}
+    Log Dictionary    ${d}
+
+
 Delete Devices
     Set Config    Delay    ${COMMON_DELAY}
     
-    Read Devices From File
+    &{d}=    Read Devices From File
+    Parse Devices Dictionary    &{d}
 
     Log In    ${USERNAME}    ${PASSWORD}
     Initialise And Open Application Screen    ${APPLICATION}    ${APPLICATION_PROFILE}
@@ -279,9 +285,33 @@ Read Devices From File
     #Append To List    ${DEVICE_EUIS}    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56
     #Append To List    ${DEVICE_NAMES}    ice12    ice32    Devc    Dice    Devic43    De    ic7    ice1    ice2    Devic3    Dice4    Devic    Dev5    ice7
     #Append To List    ${DEVICE_EUIS}    2ca7f12042007fff    2af7f1234200708d    12f7f120420036fe    2c37f12052007da2    2a57f12042007a90    2cf7312042007a1a    2cf7c12942007a56    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56
-    Append To List    ${DEVICE_NAMES}    Device1    Device2    Device3    Device4    Device5    ice12    ice32    Devc    Dice    Devic43    De    ic7    ice1    ice2    Devic3    Dice4    Devic    Dev5    ice7    art    abba    Device200    f    DD
-    Append To List    ${DEVICE_EUIS}    2cf7f12042007dff    2cf7f1204200708d    2cf7f120420036fe    2cf7f12042007da2    2cf7f12042007a39    2ca7f12042007fff    2af7f1234200708d    12f7f120420036fe    2c37f12052007da2    2a57f12042007a90    2cf7312042007a1a    2cf7c12942007a56    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56    2afba1204200708d    2abba1abba00708d    2cf7312ddda07a1a    ffffffffff007da2    4ef167e594428eba
+    #Append To List    ${DEVICE_NAMES}    Device1    Device2    Device3    Device4    Device5    ice12    ice32    Devc    Dice    Devic43    De    ic7    ice1    ice2    Devic3    Dice4    Devic    Dev5    ice7    art    abba    Device200    f    DD
+    #Append To List    ${DEVICE_EUIS}    2cf7f12042007dff    2cf7f1204200708d    2cf7f120420036fe    2cf7f12042007da2    2cf7f12042007a39    2ca7f12042007fff    2af7f1234200708d    12f7f120420036fe    2c37f12052007da2    2a57f12042007a90    2cf7312042007a1a    2cf7c12942007a56    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56    2afba1204200708d    2abba1abba00708d    2cf7312ddda07a1a    ffffffffff007da2    4ef167e594428eba
+    &{d}=    Create Dictionary    2cf7f12042007dff=Device1    2cf7f1204200708d=Device2    2cf7f120420036fe=Device3    2cf7f12042007da2=Device4    2cf7f12042007a39=Device5
+    [Return]    &{d}
 
+Parse Devices Dictionary
+    [Arguments]    &{dict}
+    FOR  ${key}  IN  @{dict}
+        Append To List    ${DEVICE_EUIS}    ${key}
+        Append To List    ${DEVICE_NAMES}    ${dict}[${key}]
+    END
+
+Create Dictionary From Lists
+    [Arguments]    ${keys}    ${values}
+    &{res_dict}=    Create Dictionary
+    ${keys_len}=    Get Length    ${keys}
+    ${values_len}=    Get Length    ${values}
+    IF  '${keys_len}'=='${values_len}'
+        FOR  ${i}  IN RANGE  ${keys_len}
+            ${key}=    Get From List    ${keys}    ${i}
+            ${value}=    Get From List    ${values}    ${i}
+            Set To Dictionary    ${res_dict}    ${key}=${value}
+        END
+    END
+
+    [Return]    &{res_dict}
+    
 
 Start Browser
     Open Browser    ${LOGIN URL}    ${BROWSER}

@@ -32,7 +32,7 @@ Go To Applications
     IF    '${res}'=='${False}'
         #Makes it viable only for the first organization.
         #Take that into account later on.
-        Go To    http://192.168.1.66:8080/#/organizations/1/applications    5s
+        Go To    http://192.168.1.66:8080/#/organizations/1/applications    10s
         ${res}=    Is In Applications
     END
 
