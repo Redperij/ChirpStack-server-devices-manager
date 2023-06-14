@@ -10,11 +10,12 @@ Library    ConfigFileParser.py    ${CONFIG_FILENAME}
 *** Variables ***
 
 ${CONFIG_FILENAME}    local.config
-${LOGIN_URL}    http://192.168.1.66:8080
+${APPLICATION}    FixMe
+
+${LOGIN_URL}    http://localhost:8080
 ${BROWSER}      Firefox
 ${USERNAME}     admin
 ${PASSWORD}     admin
-${APPLICATION}    FixMe
 ${APPLICATION_PROFILE}    Lorix1_service
 ${DEVICE_PROFILE}    Metropolia_devices
 @{DEVICE_NAMES}
@@ -34,7 +35,7 @@ Go To Applications
     IF    '${res}'=='${False}'
         #Makes it viable only for the first organization.
         #Take that into account later on.
-        Go To    http://192.168.1.66:8080/#/organizations/1/applications    10s
+        Go To    ${LOGIN_URL}/#/organizations/1/applications    10s
         ${res}=    Is In Applications
     END
 
@@ -284,17 +285,24 @@ Log In
     Click Text    Login    2
 
 Initialise
-    ${LOGIN_URL}=    Get From Config File    LOGIN_URL
-    ${BROWSER}=    Get From Config File    BROWSER
-    ${USERNAME}=    Get From Config File    USERNAME
-    ${PASSWORD}=    Get From Config File    PASSWORD
-    ${APPLICATION_PROFILE}=    Get From Config File    APPLICATION_PROFILE
-    ${DEVICE_PROFILE}=    Get From Config File    DEVICE_PROFILE
-    Log To Console    Config: ${LOGIN_URL} ${BROWSER} ${USERNAME} ${PASSWORD} ${APPLICATION_PROFILE} ${DEVICE_PROFILE}
-    Start Browser
+    ${login_url}=    Get From Config File    LOGIN_URL
+    Set Global Variable    ${LOGIN_URL}    ${login_url}
+    ${browser}=    Get From Config File    BROWSER
+    Set Global Variable    ${BROWSER}    ${browser}
+    ${username}=    Get From Config File    USERNAME
+    Set Global Variable    ${USERNAME}    ${username}
+    ${password}=    Get From Config File    PASSWORD
+    Set Global Variable    ${PASSWORD}    ${password}
+    ${application_profile}=    Get From Config File    APPLICATION_PROFILE
+    Set Global Variable    ${APPLICATION_PROFILE}    ${application_profile}
+    ${device_profile}=    Get From Config File    DEVICE_PROFILE
+    Set Global Variable    ${DEVICE_PROFILE}    ${device_profile}
+    Log To Console    \nConfig: ${LOGIN_URL} ${BROWSER} ${USERNAME} ${PASSWORD} ${APPLICATION_PROFILE} ${DEVICE_PROFILE}\n
+    Start Browser    ${LOGIN_URL}    ${BROWSER}
 
 Start Browser
-    Open Browser    ${LOGIN_URL}    ${BROWSER}
+    [Arguments]    ${url}    ${browser}
+    Open Browser    ${url}    ${browser}
 
 Stop Browser
     Close Browser
