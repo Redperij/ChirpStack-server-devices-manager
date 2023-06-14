@@ -1,0 +1,35 @@
+# - Used for comments, escaped by '\'
+
+####################################
+#    Google API related settings   #
+####################################
+
+
+#e-mail, configured through the console.cloud.google.com IAM, that has access to the google sheet and key.
+EMAIL:"name@orgname.iam.gserviceaccount.com"
+
+####################################
+# Robot framework related settings #
+####################################
+
+#Login username
+USERNAME:"admin"
+
+#Login password
+PASSWORD:"admin"
+
+#URL used by robotframework to access the LoRa server.
+LOGIN_URL:"http://localhost:8080"
+
+#Browser used by robotframework
+BROWSER:"Firefox"
+
+#Application profile to choose from dropdown menu upon application creation.
+APPLICATION_PROFILE:"Lorix1_service"
+
+#Device profile to choose from dropdown menu upon device creation.
+DEVICE_PROFILE:"Metropolia_devices"
+
+#Organization id (can be found inside the link .../organizations/[?]/applications)
+#Usually will be '1', if original organization is used
+ORGANIZATION_ID:"1"

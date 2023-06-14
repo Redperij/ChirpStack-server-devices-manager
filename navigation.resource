@@ -5,10 +5,12 @@ Documentation    This resource file provides keywords
 
 Library    Collections
 Library    QWeb
+Library    ConfigFileParser.py    ${CONFIG_FILENAME}
 
 *** Variables ***
 
-${LOGIN URL}    http://192.168.1.66:8080
+${CONFIG_FILENAME}    local.config
+${LOGIN_URL}    http://192.168.1.66:8080
 ${BROWSER}      Firefox
 ${USERNAME}     admin
 ${PASSWORD}     admin
@@ -280,3 +282,19 @@ Log In
     Type Text    xpath\=//input[@id\="username"]    ${username}
     Type Text    xpath\=//input[@id\="password"]    ${password}
     Click Text    Login    2
+
+Initialise
+    ${LOGIN_URL}=    Get From Config File    LOGIN_URL
+    ${BROWSER}=    Get From Config File    BROWSER
+    ${USERNAME}=    Get From Config File    USERNAME
+    ${PASSWORD}=    Get From Config File    PASSWORD
+    ${APPLICATION_PROFILE}=    Get From Config File    APPLICATION_PROFILE
+    ${DEVICE_PROFILE}=    Get From Config File    DEVICE_PROFILE
+    Log To Console    Config: ${LOGIN_URL} ${BROWSER} ${USERNAME} ${PASSWORD} ${APPLICATION_PROFILE} ${DEVICE_PROFILE}
+    Start Browser
+
+Start Browser
+    Open Browser    ${LOGIN_URL}    ${BROWSER}
+
+Stop Browser
+    Close Browser

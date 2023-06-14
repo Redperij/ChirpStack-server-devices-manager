@@ -3,7 +3,7 @@ Documentation    Controlling the server interface with Robot Framework
 
 Resource    navigation.resource
 
-Task Setup      Start Browser
+Task Setup      Initialise
 Task Teardown   Stop Browser
 
 *** Variables ***
@@ -311,10 +311,3 @@ Create Dictionary From Lists
     END
 
     [Return]    &{res_dict}
-    
-
-Start Browser
-    Open Browser    ${LOGIN URL}    ${BROWSER}
-
-Stop Browser
-    Close Browser
