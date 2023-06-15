@@ -37,6 +37,13 @@ Add Devices
     &{d}=    Create Dictionary From Lists    ${DEVICE_EUIS}    ${app_keys}
     Log Dictionary    ${d}
 
+    ${f_written_to_spreadsheet}=    Write To Spreadsheet    ${d}
+    
+    IF    '${f_written_to_spreadsheet}'=='${True}'
+        Log To Console    Successfully written app-keys to the Google doc.
+    ELSE
+        Log TO Console    Failed to write app-keys to google doc.
+    END
 
 Delete Devices
     Set Config    Delay    ${COMMON_DELAY}
@@ -258,7 +265,7 @@ Create Device
         ${app_key}=    Generate App Key
     ELSE
         Run Keyword And Warn On Failure    Fail    Was not able to create device '${name}' (${eui}).\nProbably EUI is held by the other app.   
-        ${app_key}=    Set Variable    ERROR:"Was not able to create device '${name}' (${eui}).\nHint: It is possible that EUI is occupied by the device in other application."    
+        ${app_key}=    Set Variable    ERROR:"Was not able to create device '${name}' (${eui}). Hint: It is possible that EUI is occupied by the device in other application."    
     END
     
     [Return]    ${app_key}

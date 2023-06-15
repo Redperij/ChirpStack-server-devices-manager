@@ -52,6 +52,27 @@ class GoogleSpreadsheetParser(object):
         euis = self.get_list_of("EUI")
         resdict = dict(zip(euis, devices))
         return resdict
+    
+    def write_to_spreadsheet(self, devices_dict):
+        if(self._f_opened_worksheet == False):
+            return False
+        
+        app_key_cell = self._worksheet.find("App key")
+        error_cell = self._worksheet.find("ERROR")
+
+        for eui in devices_dict:
+            eui_cell = self._worksheet.find(eui)
+            if(devices_dict[eui].find("ERROR:") != -1):
+                #trim "ERROR:" part and write message to the ERROR column.
+                err, devices_dict[eui] = devices_dict[eui].split(":", 1)
+                self._worksheet.update_cell(eui_cell.row, error_cell.col, devices_dict[eui])
+                self._worksheet.update_cell(eui_cell.row, app_key_cell.col, "")
+            else:
+                #Write app key to the "App key" column.
+                self._worksheet.update_cell(eui_cell.row, error_cell.col, "")
+                self._worksheet.update_cell(eui_cell.row, app_key_cell.col, devices_dict[eui])
+
+        return True
 
 #def main():
 #    sp = GoogleSpreadsheetParser("Devices1", "Main")
