@@ -11,8 +11,8 @@ Task Teardown   Stop Browser
 *** Tasks ***
 Add Devices
     Set Config    Delay    ${COMMON_DELAY}
-
-    &{d}=    Read Devices From File
+    
+    &{d}=    Read Devices From Spreadsheet
     Parse Devices Dictionary    &{d}
 
     Log In    ${USERNAME}    ${PASSWORD}
@@ -41,7 +41,7 @@ Add Devices
 Delete Devices
     Set Config    Delay    ${COMMON_DELAY}
     
-    &{d}=    Read Devices From File
+    &{d}=    Read Devices From Spreadsheet
     Parse Devices Dictionary    &{d}
 
     Log In    ${USERNAME}    ${PASSWORD}
@@ -77,6 +77,8 @@ Delete Application
     Initialise And Open Application Screen    ${APPLICATION}    ${APPLICATION_PROFILE}
     ${res}=    Go To Application Devices    ${APPLICATION}
 
+#You know that it won't work, right?
+#It's a table, so has to be handled as devices.
     IF  '${res}'=='${True}'
         Click Text    Delete
         Close Alert    Accept    5s
@@ -84,10 +86,6 @@ Delete Application
     ELSE
         Fail    Was unable to delete the "${APPLICATION}" app.
     END
-
-#Yeah, this crap may also be needed.
-Rename Devices
-    #Searching for a device by uid and editting its name via figuring out the row of the table.
 
 Test
     Set Config    Delay    ${COMMON_DELAY}
@@ -135,7 +133,7 @@ Setup Application
     Verify Text    Application name
     Type Text    xpath\=//input[@id\="name"]    ${app_name}
     Type Text    xpath\=//input[@id\="description"]    ${app_name}
-    Set Config    Delay    0.2s
+    Set Config    Delay    0.5s
     Click Text    Select service-profile    1
     Click Text    ${app_profile}
     Set Config    Delay    ${COMMON_DELAY}
@@ -243,7 +241,7 @@ Create Device
     Type Text    xpath\=//input[@id\="name"]    ${name}
     Type Text    xpath\=//input[@id\="description"]    ${name}
     Type Text    xpath\=//input[@id\="devEUI"]    ${eui}
-    Set Config    Delay    0.2s
+    Set Config    Delay    0.5s
     Click Text    Device-profile    Disable frame-counter validation
     Click Text    ${device_profile}
     Set Config    Delay    ${COMMON_DELAY}
@@ -278,17 +276,17 @@ Generate App Key
 #DEVICE_NAMES and DEVICE_EUIS
 #based on the data from the file or google doc.
 #Or it would be better to use Dictionary.
-Read Devices From File
-    #Append To List    ${DEVICE_NAMES}    Device1    Device2    Device3    Device4    Device5
-    #Append To List    ${DEVICE_EUIS}    2cf7f12042007dff    2cf7f1204200708d    2cf7f120420036fe    2cf7f12042007da2    2cf7f12042007a39
-    #Append To List    ${DEVICE_NAMES}    ice1    ice2    Devic3    Dice4    Devic    Dev5    ice7
-    #Append To List    ${DEVICE_EUIS}    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56
-    #Append To List    ${DEVICE_NAMES}    ice12    ice32    Devc    Dice    Devic43    De    ic7    ice1    ice2    Devic3    Dice4    Devic    Dev5    ice7
-    #Append To List    ${DEVICE_EUIS}    2ca7f12042007fff    2af7f1234200708d    12f7f120420036fe    2c37f12052007da2    2a57f12042007a90    2cf7312042007a1a    2cf7c12942007a56    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56
-    #Append To List    ${DEVICE_NAMES}    Device1    Device2    Device3    Device4    Device5    ice12    ice32    Devc    Dice    Devic43    De    ic7    ice1    ice2    Devic3    Dice4    Devic    Dev5    ice7    art    abba    Device200    f    DD
-    #Append To List    ${DEVICE_EUIS}    2cf7f12042007dff    2cf7f1204200708d    2cf7f120420036fe    2cf7f12042007da2    2cf7f12042007a39    2ca7f12042007fff    2af7f1234200708d    12f7f120420036fe    2c37f12052007da2    2a57f12042007a90    2cf7312042007a1a    2cf7c12942007a56    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56    2afba1204200708d    2abba1abba00708d    2cf7312ddda07a1a    ffffffffff007da2    4ef167e594428eba
-    &{d}=    Create Dictionary    2cf7f12042007dff=Device1    2cf7f1204200708d=Device2    2cf7f120420036fe=Device3    2cf7f12042007da2=Device4    2cf7f12042007a39=Device5
-    [Return]    &{d}
+#Read Devices From File
+#    #Append To List    ${DEVICE_NAMES}    Device1    Device2    Device3    Device4    Device5
+#    #Append To List    ${DEVICE_EUIS}    2cf7f12042007dff    2cf7f1204200708d    2cf7f120420036fe    2cf7f12042007da2    2cf7f12042007a39
+#    #Append To List    ${DEVICE_NAMES}    ice1    ice2    Devic3    Dice4    Devic    Dev5    ice7
+#    #Append To List    ${DEVICE_EUIS}    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56
+#    #Append To List    ${DEVICE_NAMES}    ice12    ice32    Devc    Dice    Devic43    De    ic7    ice1    ice2    Devic3    Dice4    Devic    Dev5    ice7
+#    #Append To List    ${DEVICE_EUIS}    2ca7f12042007fff    2af7f1234200708d    12f7f120420036fe    2c37f12052007da2    2a57f12042007a90    2cf7312042007a1a    2cf7c12942007a56    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56
+#    #Append To List    ${DEVICE_NAMES}    Device1    Device2    Device3    Device4    Device5    ice12    ice32    Devc    Dice    Devic43    De    ic7    ice1    ice2    Devic3    Dice4    Devic    Dev5    ice7    art    abba    Device200    f    DD
+#    #Append To List    ${DEVICE_EUIS}    2cf7f12042007dff    2cf7f1204200708d    2cf7f120420036fe    2cf7f12042007da2    2cf7f12042007a39    2ca7f12042007fff    2af7f1234200708d    12f7f120420036fe    2c37f12052007da2    2a57f12042007a90    2cf7312042007a1a    2cf7c12942007a56    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56    2afba1204200708d    2abba1abba00708d    2cf7312ddda07a1a    ffffffffff007da2    4ef167e594428eba
+#    &{d}=    Create Dictionary    2cf7f12042007dff=Device1    2cf7f1204200708d=Device2    2cf7f120420036fe=Device3    2cf7f12042007da2=Device4    2cf7f12042007a39=Device5
+#    [Return]    &{d}
 
 Parse Devices Dictionary
     [Arguments]    &{dict}

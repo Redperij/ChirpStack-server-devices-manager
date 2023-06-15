@@ -17,12 +17,12 @@ print(wsh.get('A1:B3'))
 
 print(wsh.get_all_records())
 
-print(wsh.get_all_values())
+#print(wsh.get_all_values())
 
-wsh.update('C2', 'Some app key')
+#wsh.update('C2', 'Some app key')
 
-wsh.update('C3:C4', [['Hey'], ['There']])
+#wsh.update('C3:C4', [['Hey'], ['There']])
 
-wsh.update('D3', '=A2', raw=False)
+#wsh.update('D3', '=A2', raw=False)
 
 #wsh.delete_rows(1)

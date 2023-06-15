@@ -6,11 +6,12 @@ Documentation    This resource file provides keywords
 Library    Collections
 Library    QWeb
 Library    ConfigFileParser.py    ${CONFIG_FILENAME}
+Library    GoogleSpreadsheetParser.py    ${APPLICATION}    Main
 
 *** Variables ***
 
 ${CONFIG_FILENAME}    local.config
-${APPLICATION}    FixMe
+${APPLICATION}    Devices1
 
 ${LOGIN_URL}    http://localhost:8080
 ${BROWSER}      Firefox
