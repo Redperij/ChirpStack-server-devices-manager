@@ -3,7 +3,7 @@ Documentation    Controlling the server interface with Robot Framework
 
 Resource    navigation.resource
 
-Task Setup      Start Browser
+Task Setup      Initialise
 Task Teardown   Stop Browser
 
 *** Variables ***
@@ -11,21 +11,14 @@ Task Teardown   Stop Browser
 *** Tasks ***
 Add Devices
     Set Config    Delay    ${COMMON_DELAY}
-
-    #Should be python keyword.
-    #Python must set two lists:
-    #DEVICE_NAMES and DEVICE_EUIS
-    #based on the data from the file or google doc.
-    Read Devices From File
+    
+    &{d}=    Read Devices From Spreadsheet
+    Parse Devices Dictionary    &{d}
 
     Log In    ${USERNAME}    ${PASSWORD}
     Initialise And Open Application Screen    ${APPLICATION}    ${APPLICATION_PROFILE}
 
-    #Now we are in Application screen
-    #Switch to devices and perform the main thing.
     Go To Application Devices    ${APPLICATION}
-    ${app_key}=    Add Device    ${APPLICATION}    Device3    2cf7f120420036fe    ${DEVICE_PROFILE}
-    Log To Console    \nReceived: [${app_key}]
     
     ${dev_num}=    Get Length    ${DEVICE_NAMES}
     @{app_keys}=    Create List
@@ -41,14 +34,22 @@ Add Devices
         Log To Console    [${app_key}]\n
     END
 
+    &{d}=    Create Dictionary From Lists    ${DEVICE_EUIS}    ${app_keys}
+    Log Dictionary    ${d}
+
+    ${f_written_to_spreadsheet}=    Write To Spreadsheet    ${d}
+    
+    IF    '${f_written_to_spreadsheet}'=='${True}'
+        Log To Console    Successfully written app-keys to the Google doc.
+    ELSE
+        Log To Console    Failed to write app-keys to google doc.
+    END
+
 Delete Devices
     Set Config    Delay    ${COMMON_DELAY}
     
-    #Should be python keyword.
-    #Python must set two lists:
-    #DEVICE_NAMES and DEVICE_EUIS
-    #based on the data from the file or google doc.
-    Read Devices From File
+    &{d}=    Read Devices From Spreadsheet
+    Parse Devices Dictionary    &{d}
 
     Log In    ${USERNAME}    ${PASSWORD}
     Initialise And Open Application Screen    ${APPLICATION}    ${APPLICATION_PROFILE}
@@ -58,7 +59,8 @@ Delete Devices
     FOR  ${i}  IN RANGE  ${dev_num}
         ${dev_name}=    Get From List    ${DEVICE_NAMES}    ${i}
         Delete Device    ${APPLICATION}    ${dev_name}
-        Verify No Text    ${dev_name}
+        ${res}=    Devices Table Contains Name    ${APPLICATION}    ${dev_name}    ${False}
+        Run Keyword If    '${res}'=='${True}'    Fail    Was unable to delete device "${dev_name}", aborting.
     END
 
 Delete All Devices
@@ -68,12 +70,10 @@ Delete All Devices
     Go To Application Devices    ${APPLICATION}
 
     Use Table    xpath\=//table[@class\="MuiTable-root"]
-    #nope, clicks somewhere else.
-    #Click Cell    r1c2
-    ${stop}=    Is Text    0-0 of 0
+    ${stop}=    Is Text    0-0 of 0    0.2s
     WHILE  '${stop}'=='${False}'
         ${dev_name}=    Get Cell Text    r1c2
-        Delete Device    ${APPLICATION}    ${dev_name}
+        Delete Device    ${APPLICATION}    ${dev_name}    ${True}
         ${stop}=    Is Text    0-0 of 0    0.5s
     END
 
@@ -83,6 +83,8 @@ Delete Application
     Initialise And Open Application Screen    ${APPLICATION}    ${APPLICATION_PROFILE}
     ${res}=    Go To Application Devices    ${APPLICATION}
 
+#You know that it won't work, right?
+#It's a table, so has to be handled as devices.
     IF  '${res}'=='${True}'
         Click Text    Delete
         Close Alert    Accept    5s
@@ -91,9 +93,33 @@ Delete Application
         Fail    Was unable to delete the "${APPLICATION}" app.
     END
 
-#Yeah, this crap may also be needed.
-Rename Devices
-    #Searching for a device by uid and editting its name via figuring out the row of the table.
+Test
+    Set Config    Delay    ${COMMON_DELAY}
+    Log In    ${USERNAME}    ${PASSWORD}
+    Initialise And Open Application Screen    ${APPLICATION}    ${APPLICATION_PROFILE}
+    ${res}=    Go To Application Devices    ${APPLICATION}
+    IF  '${res}'=='${True}'
+        ${res}=    Devices Table Contains Eui    ${APPLICATION}    2cf7f12042007da2    ${False}
+        Log To Console    Device with eui 2cf7f12042007da2 is ${res}
+    ELSE
+        Fail    Was unable to reach the "${APPLICATION}" app.
+    END
+
+    ${res}=    Devices Table Switch To First Page    ${APPLICATION}
+    IF  '${res}'=='${True}'
+        ${res}=    Devices Table Contains Name    ${APPLICATION}    Device5    ${False}
+        Log To Console    Device name Device5 is ${res}
+    ELSE
+        Fail    Was unable to reach the "${APPLICATION}" app.
+    END
+
+    ${res}=    Devices Table Switch To First Page    ${APPLICATION}
+    IF  '${res}'=='${True}'
+        ${res}=    Devices Table Get Corresponding Name    ${APPLICATION}    2cf7f1204200708d    ${False}    ${True}
+        Log To Console    Device name for 2cf7f1204200708d is ${res}
+    ELSE
+        Fail    Was unable to reach the "${APPLICATION}" app.
+    END
 
 *** Keywords ***
 Initialise And Open Application Screen
@@ -113,7 +139,7 @@ Setup Application
     Verify Text    Application name
     Type Text    xpath\=//input[@id\="name"]    ${app_name}
     Type Text    xpath\=//input[@id\="description"]    ${app_name}
-    Set Config    Delay    0.1s
+    Set Config    Delay    0.5s
     Click Text    Select service-profile    1
     Click Text    ${app_profile}
     Set Config    Delay    ${COMMON_DELAY}
@@ -134,66 +160,103 @@ Add Device
         Run Keyword If    '${res}'=='${False}'    Fail    Was unable to switch to the app devices screen to create a device.
     END
 
-    ${same_name}=    Is Text    ${name}    0.2s
-    ${same_eui}=    Is Text    ${eui}    0.2s
-    #We have the same device configured - just get the app-key.
-    IF  '${same_name}'=='${True}' and '${same_eui}'=='${True}'
-        ${app_key}=    Update Device    ${app_name}    ${name}
-    
-    #We have the same name, but wrong eui - purge existing device and set the new one.
-    #Server doesn't allow to have the same name.
-    ELSE IF    '${same_name}'=='${True}' and '${same_eui}'=='${False}'
-        Delete Device    ${app_name}    ${name}
-        ${same_name}=    Is Text    ${name}    0.2s
-        ${same_eui}=    Is Text    ${eui}    0.2s
-        Run Keyword If    '${same_name}'=='${True}' and '${same_eui}'=='${True}'    Fail    Device ${name} was not deleted.
-        ${app_key}=    Create Device    ${name}    ${eui}    ${device_profile}
-    
-    #Same eui, but not the name. What a nightmare to handle.
-    ELSE IF    '${same_name}'=='${False}' and '${same_eui}'=='${True}'
-        Fail    I DON'T WANT TO HANDLE THE SAME EUI WITH DIFFERENT NAMES!\nWHAT A MESS!\nHOW YOU ENDED UP IN THIS SITUATION ANYWAY!?
-
+    #Now we have to figure out if device exists.
+    ${same_eui}=    Devices Table Contains Eui    ${app_name}    ${eui}    ${False}
+    IF  '${same_eui}'=='${True}'
+        ${corr_name}=    Devices Table Get Corresponding Name    ${app_name}    ${eui}    ${False}    ${True}
+        IF  '${corr_name}'!='${name}'
+            ${same_name}=    Devices Table Contains Name    ${app_name}    ${name}    ${False}
+            IF  '${same_name}'=='${True}'
+                #We have same eui not in the same row with the same name
+                #Give a warning, do nothing.
+                #${app_key}=    Update Device    ${app_name}    ${corr_name}
+                ${app_key}=    Set Variable    ERROR:"'${eui}' is associated with '${corr_name}' device. Device '${name}' cannot be created."
+                Devices Table Contains Eui    ${app_name}    ${eui}    ${False}
+                Run Keyword And Warn On Failure    Fail    Device's '${name}' EUI (${eui}) is held by '${corr_name}' device.
+            ELSE
+                #Wrong name.
+                ${app_key}=    Rename Device    ${app_name}    ${corr_name}    ${eui}    ${name}    ${device_profile}
+            END
+            
+            
+        ELSE
+            #Device already exists
+            ${app_key}=    Update Device    ${app_name}    ${name}    ${True}
+        END
+        
     ELSE
-        ${app_key}=    Create Device    ${name}    ${eui}    ${device_profile}
+        ${same_name}=    Devices Table Contains Name    ${app_name}    ${name}    ${False}
+        IF  '${same_name}'=='${True}'
+            #Wrong eui
+            Delete Device    ${app_name}    ${name}    ${True}
+            ${app_key}=    Create Device    ${name}    ${eui}    ${device_profile}
+        ELSE
+            #No such device
+            ${app_key}=    Create Device    ${name}    ${eui}    ${device_profile}
+        END
+        
     END
     
     [Return]    ${app_key}    
 
-#Figure it out by eui, use the table.
 Delete Device
     [Documentation]    Deletes device from the specified app.
     ...    Does nothing if device was not found.
-    [Arguments]    ${app_name}    ${device_name}
+    [Arguments]    ${app_name}    ${device_name}    ${on_screen}=${False}
+    Run Keyword If    '${on_screen}'=='${False}'    Devices Table Contains Name    ${app_name}    ${device_name}    ${False}
     ${res}=    Go To Application Device    ${app_name}    ${device_name}
     IF  '${res}'=='${True}'
         Click Text    Delete
         Close Alert    Accept    5s
+    ELSE
+        Log To Console    Was unable to find device "${device_name}" in the table.
     END
 
-#Figure it out by eui, use the table.
 Update Device
     [Documentation]    Basically, just checks/creates the device app-key.
     ...    Always returns view to the "Application Devices"
-    [Arguments]    ${app_name}    ${device_name}
+    [Arguments]    ${app_name}    ${device_name}    ${on_screen}=${False}
+    Run Keyword If    '${on_screen}'=='${False}'    Devices Table Contains Name    ${app_name}    ${device_name}    ${False}
     ${res}=    Go To Application Device Keys    ${app_name}    ${device_name}
     IF  '${res}'=='${True}'
-        #Now we need to get the app key.
+        #Checking the app key.
         Verify Text    Application key
-        #Click Element    xpath\=//*[@title\="Generate random key."]
         TRY
             ${app_key}=    Get Input Value    xpath\=//input[@id\="nwkKey"]    1    1s
         EXCEPT
             #We don't have an app key, what a shame.
-            #Now we need to get the app key.
-            Click Element    xpath\=//*[@title\="Generate random key."]
-            ${app_key}=    Get Input Value    xpath\=//input[@id\="nwkKey"]
-            Click Text    Set device-keys
+            ${app_key}=    Generate App Key
         END
         Go To Application Devices    ${app_name}        
     ELSE
-        Fail    Was unable to update the ${device_name} device. Does it actually exist?
+        Run Keyword And Warn On Failure    Fail    Was unable to update the '${device_name}' device. Does it actually exist?
+        ${app_key}=    Set Variable    ERROR:"'${device_name}' unaccessible."
     END
     [Return]    ${app_key}
+
+Rename Device
+    [Documentation]    Renames the device and checks the app-key.
+    ...    Always returns view to the "Application Devices"
+    [Arguments]    ${app_name}    ${old_name}    ${eui}    ${new_name}    ${device_profile}    ${on_screen}=${False}
+    Run Keyword If    '${on_screen}'=='${False}'    Devices Table Contains Name    ${app_name}    ${old_name}    ${False}
+    ${res}=    Go To Application Device Config    ${app_name}    ${old_name}
+    IF  '${res}'=='${True}'
+        Type Text    xpath\=//input[@id\="name"]    ${new_name}    clear_key={CONTROL + a}
+        Type Text    xpath\=//input[@id\="description"]    ${new_name}    clear_key={CONTROL + a}
+        Set Config    Delay    0.5s
+        Click Element    xpath\=//input[@id\="deviceProfileID"]
+        Click Text    ${device_profile}
+        Set Config    Delay    ${COMMON_DELAY}
+        Click Text    Update device
+
+        Devices Table Contains Name    ${app_name}    ${new_name}    ${False}
+        ${app_key}=    Update Device    ${app_name}    ${new_name}    ${True}
+    ELSE
+        Run Keyword And Warn On Failure    Fail    Was unable to rename the '${old_name}' device. Does it actually exist?
+        ${app_key}=    Set Variable    ERROR:"Device with eui: '${eui}' unaccessible."
+    END
+    [Return]    ${app_key}
+
 
 Create Device
     [Documentation]    Handles the device creation.
@@ -206,7 +269,7 @@ Create Device
     Type Text    xpath\=//input[@id\="name"]    ${name}
     Type Text    xpath\=//input[@id\="description"]    ${name}
     Type Text    xpath\=//input[@id\="devEUI"]    ${eui}
-    Set Config    Delay    0.1s
+    Set Config    Delay    0.5s
     Click Text    Device-profile    Disable frame-counter validation
     Click Text    ${device_profile}
     Set Config    Delay    ${COMMON_DELAY}
@@ -218,20 +281,59 @@ Create Device
     #Implement try-catch on "Verify Text    Application key"
     #Actually, it won't be a good solution, we really have to check if something messed up upon the creation.
     
-    #Move app key to seperate keyword.
-    #Now we need to get the app key.
+    ${f_device_created}=    Is Text    Application key    1s
+    IF  '${f_device_created}'=='${True}'
+        ${app_key}=    Generate App Key
+    ELSE
+        Run Keyword And Warn On Failure    Fail    Was not able to create device '${name}' (${eui}).\nProbably EUI is held by the other app.   
+        ${app_key}=    Set Variable    ERROR:"Was not able to create device '${name}' (${eui}). Hint: It is possible that EUI is occupied by the device in other application."    
+    END
+    
+    [Return]    ${app_key}
+
+Generate App Key
+    [Documentation]    Generates app key if called from the device's "Keys" view.
     Verify Text    Application key
     Click Element    xpath\=//*[@title\="Generate random key."]
     ${app_key}=    Get Input Value    xpath\=//input[@id\="nwkKey"]
     Click Text    Set device-keys
     [Return]    ${app_key}
 
-Read Devices From File
-    Append To List    ${DEVICE_NAMES}    Device1    Device2    Device3    Device4    Device5
-    Append To List    ${DEVICE_EUIS}    2cf7f12042007dff    2cf7f1204200708d    2cf7f120420036fe    2cf7f12042007da2    2cf7f12042007a39
+#Should be python keyword.
+#Python must set two lists:
+#DEVICE_NAMES and DEVICE_EUIS
+#based on the data from the file or google doc.
+#Or it would be better to use Dictionary.
+#Read Devices From File
+#    #Append To List    ${DEVICE_NAMES}    Device1    Device2    Device3    Device4    Device5
+#    #Append To List    ${DEVICE_EUIS}    2cf7f12042007dff    2cf7f1204200708d    2cf7f120420036fe    2cf7f12042007da2    2cf7f12042007a39
+#    #Append To List    ${DEVICE_NAMES}    ice1    ice2    Devic3    Dice4    Devic    Dev5    ice7
+#    #Append To List    ${DEVICE_EUIS}    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56
+#    #Append To List    ${DEVICE_NAMES}    ice12    ice32    Devc    Dice    Devic43    De    ic7    ice1    ice2    Devic3    Dice4    Devic    Dev5    ice7
+#    #Append To List    ${DEVICE_EUIS}    2ca7f12042007fff    2af7f1234200708d    12f7f120420036fe    2c37f12052007da2    2a57f12042007a90    2cf7312042007a1a    2cf7c12942007a56    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56
+#    #Append To List    ${DEVICE_NAMES}    Device1    Device2    Device3    Device4    Device5    ice12    ice32    Devc    Dice    Devic43    De    ic7    ice1    ice2    Devic3    Dice4    Devic    Dev5    ice7    art    abba    Device200    f    DD
+#    #Append To List    ${DEVICE_EUIS}    2cf7f12042007dff    2cf7f1204200708d    2cf7f120420036fe    2cf7f12042007da2    2cf7f12042007a39    2ca7f12042007fff    2af7f1234200708d    12f7f120420036fe    2c37f12052007da2    2a57f12042007a90    2cf7312042007a1a    2cf7c12942007a56    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56    2afba1204200708d    2abba1abba00708d    2cf7312ddda07a1a    ffffffffff007da2    4ef167e594428eba
+#    &{d}=    Create Dictionary    2cf7f12042007dff=Device1    2cf7f1204200708d=Device2    2cf7f120420036fe=Device3    2cf7f12042007da2=Device4    2cf7f12042007a39=Device5
+#    [Return]    &{d}
 
-Start Browser
-    Open Browser    ${LOGIN URL}    ${BROWSER}
+Parse Devices Dictionary
+    [Arguments]    &{dict}
+    FOR  ${key}  IN  @{dict}
+        Append To List    ${DEVICE_EUIS}    ${key}
+        Append To List    ${DEVICE_NAMES}    ${dict}[${key}]
+    END
 
-Stop Browser
-    Close Browser
+Create Dictionary From Lists
+    [Arguments]    ${keys}    ${values}
+    &{res_dict}=    Create Dictionary
+    ${keys_len}=    Get Length    ${keys}
+    ${values_len}=    Get Length    ${values}
+    IF  '${keys_len}'=='${values_len}'
+        FOR  ${i}  IN RANGE  ${keys_len}
+            ${key}=    Get From List    ${keys}    ${i}
+            ${value}=    Get From List    ${values}    ${i}
+            Set To Dictionary    ${res_dict}    ${key}=${value}
+        END
+    END
+
+    [Return]    &{res_dict}

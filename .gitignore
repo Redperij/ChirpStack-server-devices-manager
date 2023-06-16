@@ -161,3 +161,6 @@ cython_debug/
 
 #Robot Framework reports
 results/
+
+#Config file
+local.config
