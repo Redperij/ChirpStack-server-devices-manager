@@ -20,6 +20,7 @@ ${USERNAME}     admin
 ${PASSWORD}     admin
 ${APPLICATION_PROFILE}    Lorix1_service
 ${DEVICE_PROFILE}    Metropolia_devices
+${ORG_ID}    1
 @{DEVICE_NAMES}
 @{DEVICE_EUIS}
 ${COMMON_DELAY}    0
@@ -37,7 +38,7 @@ Go To Applications
     IF    '${res}'=='${False}'
         #Makes it viable only for the first organization.
         #Take that into account later on.
-        Go To    ${LOGIN_URL}/#/organizations/1/applications    10s
+        Go To    ${LOGIN_URL}/#/organizations/${ORG_ID}/applications    10s
         ${res}=    Is In Applications
     END
 
@@ -299,7 +300,9 @@ Initialise
     Set Global Variable    ${APPLICATION_PROFILE}    ${application_profile}
     ${device_profile}=    Get From Config File    DEVICE_PROFILE
     Set Global Variable    ${DEVICE_PROFILE}    ${device_profile}
-    Log To Console    \nConfig: ${LOGIN_URL} ${BROWSER} ${USERNAME} ${PASSWORD} ${APPLICATION_PROFILE} ${DEVICE_PROFILE}\n
+    ${org_id}=    Get From Config File    ORGANIZATION_ID
+    Set Global Variable    ${ORG_ID}    ${org_id}
+    Log To Console    \nConfig: ${LOGIN_URL} ${BROWSER} ${USERNAME} ${PASSWORD} ${APPLICATION_PROFILE} ${DEVICE_PROFILE} ${ORG_ID}\n
     Start Browser    ${LOGIN_URL}    ${BROWSER}
 
 Start Browser

@@ -42,7 +42,7 @@ Add Devices
     IF    '${f_written_to_spreadsheet}'=='${True}'
         Log To Console    Successfully written app-keys to the Google doc.
     ELSE
-        Log TO Console    Failed to write app-keys to google doc.
+        Log To Console    Failed to write app-keys to google doc.
     END
 
 Delete Devices
@@ -61,7 +61,6 @@ Delete Devices
         Delete Device    ${APPLICATION}    ${dev_name}
         ${res}=    Devices Table Contains Name    ${APPLICATION}    ${dev_name}    ${False}
         Run Keyword If    '${res}'=='${True}'    Fail    Was unable to delete device "${dev_name}", aborting.
-        #Verify No Text    ${dev_name}
     END
 
 Delete All Devices
@@ -206,12 +205,13 @@ Delete Device
     [Documentation]    Deletes device from the specified app.
     ...    Does nothing if device was not found.
     [Arguments]    ${app_name}    ${device_name}    ${on_screen}=${False}
-    Run Keyword If    '${on_screen}'=='${False}'    Devices Table Switch To First Page    ${app_name}
     Run Keyword If    '${on_screen}'=='${False}'    Devices Table Contains Name    ${app_name}    ${device_name}    ${False}
     ${res}=    Go To Application Device    ${app_name}    ${device_name}
     IF  '${res}'=='${True}'
         Click Text    Delete
         Close Alert    Accept    5s
+    ELSE
+        Log To Console    Was unable to find device "${device_name}" in the table.
     END
 
 Update Device
