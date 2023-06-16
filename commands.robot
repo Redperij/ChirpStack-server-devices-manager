@@ -175,9 +175,7 @@ Add Device
                 Run Keyword And Warn On Failure    Fail    Device's '${name}' EUI (${eui}) is held by '${corr_name}' device.
             ELSE
                 #Wrong name.
-                #Delete the device for now, but just rename it later on.
-                Delete Device    ${app_name}    ${corr_name}
-                ${app_key}=    Create Device    ${name}    ${eui}    ${device_profile}
+                ${app_key}=    Rename Device    ${app_name}    ${corr_name}    ${eui}    ${name}    ${device_profile}
             END
             
             
@@ -218,7 +216,6 @@ Update Device
     [Documentation]    Basically, just checks/creates the device app-key.
     ...    Always returns view to the "Application Devices"
     [Arguments]    ${app_name}    ${device_name}    ${on_screen}=${False}
-    Run Keyword If    '${on_screen}'=='${False}'    Devices Table Switch To First Page    ${app_name}
     Run Keyword If    '${on_screen}'=='${False}'    Devices Table Contains Name    ${app_name}    ${device_name}    ${False}
     ${res}=    Go To Application Device Keys    ${app_name}    ${device_name}
     IF  '${res}'=='${True}'
@@ -236,6 +233,30 @@ Update Device
         ${app_key}=    Set Variable    ERROR:"'${device_name}' unaccessible."
     END
     [Return]    ${app_key}
+
+Rename Device
+    [Documentation]    Renames the device and checks the app-key.
+    ...    Always returns view to the "Application Devices"
+    [Arguments]    ${app_name}    ${old_name}    ${eui}    ${new_name}    ${device_profile}    ${on_screen}=${False}
+    Run Keyword If    '${on_screen}'=='${False}'    Devices Table Contains Name    ${app_name}    ${old_name}    ${False}
+    ${res}=    Go To Application Device Config    ${app_name}    ${old_name}
+    IF  '${res}'=='${True}'
+        Type Text    xpath\=//input[@id\="name"]    ${new_name}    clear_key={CONTROL + a}
+        Type Text    xpath\=//input[@id\="description"]    ${new_name}    clear_key={CONTROL + a}
+        Set Config    Delay    0.5s
+        Click Element    xpath\=//input[@id\="deviceProfileID"]
+        Click Text    ${device_profile}
+        Set Config    Delay    ${COMMON_DELAY}
+        Click Text    Update device
+
+        Devices Table Contains Name    ${app_name}    ${new_name}    ${False}
+        ${app_key}=    Update Device    ${app_name}    ${new_name}    ${True}
+    ELSE
+        Run Keyword And Warn On Failure    Fail    Was unable to rename the '${old_name}' device. Does it actually exist?
+        ${app_key}=    Set Variable    ERROR:"Device with eui: '${eui}' unaccessible."
+    END
+    [Return]    ${app_key}
+
 
 Create Device
     [Documentation]    Handles the device creation.

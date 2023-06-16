@@ -78,6 +78,17 @@ Go To Application Device
     END
     [Return]    ${res}
 
+Go To Application Device Config
+    [Documentation]    Opens specified device's configuration view.
+    [Arguments]    ${app_name}    ${device_name}
+    ${res}=    Is In Application Device Config    ${app_name}    ${device_name}
+    IF    '${res}'=='${False}'
+        ${res}=    Go To Application Device    ${app_name}    ${device_name}
+        Run Keyword If    '${res}'=='${True}'    Click Text    Configuration    Keys (OTAA)
+        ${res}=    Is In Application Device Config    ${app_name}    ${device_name}
+    END
+    [Return]    ${res}
+
 Go To Application Device Keys
     [Documentation]    Opens specified device's app-keys view.
     [Arguments]    ${app_name}    ${device_name}
@@ -132,6 +143,15 @@ Is In Application Device
     ${res}=    Set Variable If    '${res1}'=='${True}' and '${res2}'=='${True}' and '${res3}'=='${True}'    ${True}    ${False}
     [Return]    ${res}
 
+Is In Application Device Config
+    [Documentation]    Identifies, whether we are
+    ...    in the application certain device's "Configuration" view.
+    [Arguments]    ${app_name}    ${device_name}
+    ${res1}=    Is Text    ${app_name}    1s
+    ${res2}=    Is Text    ${device_name}    1s
+    ${res3}=    Is Text    Variables    1s
+    ${res}=    Set Variable If    '${res1}'=='${True}' and '${res2}'=='${True}' and '${res3}'=='${True}'    ${True}    ${False}
+    [Return]    ${res}
 
 Is In Application Device Keys
     [Documentation]    Identifies, whether we are
@@ -198,15 +218,17 @@ Devices Table Contains Name
     WHILE  '${table_end}'=='${False}'
         ${res}=    Devices Table Sheet Contains Name    ${device_name}
         IF  '${res}'=='${False}'
+            Set Config    Delay    0.5s
             #We always have to press the right arrow. On the first page it is the only one clickable, so index is 1
             #On all other pages it is second clickable element - thus index is 2.
             #On the last page we still try to click second element and receive an exception.
-            TRY 
+            TRY
                 Click Element    xpath\=//button[@class\="MuiButtonBase-root MuiIconButton-root MuiIconButton-colorInherit"]    0.5s    False    ${arrow_index}
                 ${arrow_index}=    Set Variable    ${2}
             EXCEPT
                 ${table_end}=    Set Variable    ${True}
-            END 
+            END
+            Set Config    Delay    ${COMMON_DELAY}
         ELSE
             ${table_end}=    Set Variable    ${True}
         END
