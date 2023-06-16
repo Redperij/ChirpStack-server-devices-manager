@@ -1,0 +1,70 @@
+When dead:
+
+lorix-one-sd:~$ ls -la /run/
+drwxr-xr-x    6 root     root           500 Dec 16 19:53 .
+drwxr-xr-x    1 root     root          4096 Dec 16 19:53 ..
+drwxr-xr-x    2 avahi    avahi           80 Dec 16 19:53 avahi-daemon
+-rw-r--r--    1 root     root             5 Dec 17 23:49 chirpstack-application-server.pid
+-rw-r--r--    1 root     root             4 Dec 16 19:53 chirpstack-gateway-bridge.pid
+-rw-r--r--    1 root     root             4 Dec 16 19:53 chirpstack-network-server.pid
+drwxr-xr-x    2 messageb messageb        80 Dec 16 19:53 dbus
+-rw-r--r--    1 root     root             4 Dec 16 19:53 dropbear.pid
+-rw-r--r--    1 root     root            16 Dec 16 19:53 ifstate
+-rw-r--r--    1 root     root             4 Dec 16 19:53 klogd.pid
+lrwxrwxrwx    1 root     root            16 Dec 16 19:53 ld.so.cache -> /etc/ld.so.cache
+drwxrwxrwt    3 root     root            60 Dec 16 19:53 lock
+-rw-r--r--    1 root     root             4 Dec 16 19:53 lora-packet-forwarder.pid
+-rw-r--r--    1 root     root             4 Dec 16 19:53 monit.pid
+-rw-r--r--    1 root     root             4 Dec 16 19:53 mosquitto.pid
+-rw-r--r--    1 root     root             3 Dec 16 19:53 ntpd.pid
+-rw-r--r--    1 root     root             4 Dec 16 19:53 postmaster.5432.pid
+-rw-r--r--    1 root     root             4 Dec 16 19:53 redis.pid
+-rw-r--r--    1 root     root            23 Dec 17 19:53 resolv.conf
+-r--r--r--    1 root     root             0 Dec 16 19:53 rpcbind.lock
+srw-rw-rw-    1 root     root             0 Dec 16 19:53 rpcbind.sock
+-rw-r--r--    1 root     root             4 Dec 16 19:53 syslogd.pid
+drwxr-xr-x    6 root     root           140 Dec 16 19:53 udev
+-rw-r--r--    1 root     root             4 Dec 16 19:53 udhcpc.eth0.pid
+-rw-rw-r--    1 root     root          3072 Dec 17 23:44 utmp
+lorix-one-sd:~$ cat /run/utmp   
+lorix-one-sd:~$ t���]#5N~~~runlevel���]l5���]�1�ttyGS0GS0LOGIN���]�ttyS0S0LOGIN���]�tty11LOGIN���]}-�pts/0ts/0admin192.168.1.58ph�]l
+lorix-one-sd:~$ cat /run/chirpstack-application-server.pid
+7685
+lorix-one-sd:~$ 
+
+############################################################################################
+When alive:
+
+lorix-one-sd:~$ ls -la /run/
+drwxr-xr-x    6 root     root           500 Dec 16 19:53 .
+drwxr-xr-x    1 root     root          4096 Dec 16 19:53 ..
+drwxr-xr-x    2 avahi    avahi           80 Dec 16 19:53 avahi-daemon
+-rw-r--r--    1 root     root             4 Dec 16 19:53 chirpstack-application-server.pid
+-rw-r--r--    1 root     root             4 Dec 16 19:53 chirpstack-gateway-bridge.pid
+-rw-r--r--    1 root     root             4 Dec 16 19:53 chirpstack-network-server.pid
+drwxr-xr-x    2 messageb messageb        80 Dec 16 19:53 dbus
+-rw-r--r--    1 root     root             4 Dec 16 19:53 dropbear.pid
+-rw-r--r--    1 root     root            16 Dec 16 19:53 ifstate
+-rw-r--r--    1 root     root             4 Dec 16 19:53 klogd.pid
+lrwxrwxrwx    1 root     root            16 Dec 16 19:53 ld.so.cache -> /etc/ld.so.cache
+drwxrwxrwt    3 root     root            60 Dec 16 19:53 lock
+-rw-r--r--    1 root     root             4 Dec 16 19:53 lora-packet-forwarder.pid
+-rw-r--r--    1 root     root             4 Dec 16 19:53 monit.pid
+-rw-r--r--    1 root     root             4 Dec 16 19:53 mosquitto.pid
+-rw-r--r--    1 root     root             3 Dec 16 19:53 ntpd.pid
+-rw-r--r--    1 root     root             4 Dec 16 19:53 postmaster.5432.pid
+-rw-r--r--    1 root     root             4 Dec 16 19:53 redis.pid
+-rw-r--r--    1 root     root            23 Dec 16 19:53 resolv.conf
+-r--r--r--    1 root     root             0 Dec 16 19:53 rpcbind.lock
+srw-rw-rw-    1 root     root             0 Dec 16 19:53 rpcbind.sock
+-rw-r--r--    1 root     root             4 Dec 16 19:53 syslogd.pid
+drwxr-xr-x    6 root     root           140 Dec 16 19:53 udev
+-rw-r--r--    1 root     root             4 Dec 16 19:53 udhcpc.eth0.pid
+-rw-rw-r--    1 root     root          3072 Dec 16 19:53 utmp
+lorix-one-sd:~$ cat /run/chirpstack-application-server.pid
+820
+lorix-one-sd:~$ cat /run/utmp
+vsi���]�s	~~~reboot���]<w	5N~~~runlevel���]c|    l5���]D  mpts/1ts/1admin192.168.1.58���]��
+                                                                                                 �tty11LOGIN���]g	ttyS0S0LOGIN���]�ttyGS0GS0LOGIN���]lorix-one-sd:~$ 
+lorix-one-sd:~$ 
+
