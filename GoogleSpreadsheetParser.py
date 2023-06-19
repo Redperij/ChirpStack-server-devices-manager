@@ -40,7 +40,7 @@ class GoogleSpreadsheetParser(object):
         raw_key_contents = self._worksheet.get_all_records()
         res_list = []
         for row in raw_key_contents:
-            res_list.append(row[key_name].strip())
+            res_list.append(str(row[key_name]).strip())
 
         return res_list
     
@@ -50,37 +50,46 @@ class GoogleSpreadsheetParser(object):
     
     def write_wrong_eui_error(self, ind, eui):
         error_cell = self._worksheet.find("ERROR")
-        self._worksheet.update_cell(ind + 2, error_cell.col, "ERROR: device in %d row has corrupted eui (%s). Has to consist of \"0123456789abcdef\"" % (ind + 2, eui))
+        self._worksheet.update_cell(ind + 2, error_cell.col, "ERROR: device has corrupted eui (%s). Has to consist of 16 characters from \"0123456789abcdef\"" % (eui))
 
     def write_empty_error(self, ind, key):
         error_cell = self._worksheet.find("ERROR")
         self._worksheet.update_cell(ind + 2, error_cell.col, "ERROR: device has empty %s." % key)
 
     def verify_eui(self, eui):
+        return_val = True
         for char in eui:
             if("0123456789abcdef".find(char) == -1):
-                return False
-        return True
+                return_val = False
+        if (len(eui) != 16):
+            return_val = False
+
+        return return_val
 
     def verify_and_delete_duplicates(self, devices, euis):
         #0. Empty indexes with empty fields.
-        for i in range(0, len(euis) - 1):
+        for i in range(0, len(euis)):
             if(euis[i] == ""):
-                self.write_empty_error(i, euis[i])
+                self.write_empty_error(i, "eui")
                 euis[i] = ""
                 devices[i] = ""
+            else:
+                if(devices[i] == ""):
+                    self.write_empty_error(i, "device name")
+                    euis[i] = ""
+                    devices[i] = ""
 
         #1. Empty indexes with incorrect euis.
-        for i in range(0, len(euis) - 1):
+        for i in range(0, len(euis)):
             euis[i].lower()
-            if(self.verify_eui(euis[i]) == False):
+            if((euis[i] != "") and (self.verify_eui(euis[i]) == False)):
                 self.write_wrong_eui_error(i, euis[i])
                 euis[i] = ""
                 devices[i] = ""
         
         #2. Empty indexes with duplicate euis.
         for i in range(0, len(euis) - 1):
-            for q in range(i + 1, len(euis) - 1):
+            for q in range(i + 1, len(euis)):
                 if((euis[i] != "") and (euis[i] == euis[q])):
                     self.write_duplicate_error("EUI", i, q)
                     euis[q] = ""
@@ -88,7 +97,7 @@ class GoogleSpreadsheetParser(object):
 
         #3. Empty indexes with duplicate names.
         for i in range(0, len(devices) - 1):
-            for q in range(i + 1, len(devices) - 1):
+            for q in range(i + 1, len(devices)):
                 if((devices[i] != "") and (devices[i] == devices[q])):
                     self.write_duplicate_error("Device name", i, q)
                     euis[q] = ""
@@ -132,12 +141,12 @@ class GoogleSpreadsheetParser(object):
 
         return True
 
-#def main():
-#    sp = GoogleSpreadsheetParser("Devices1", "Main")
-#    res_dictionary = sp.read_devices_from_spreadsheet()
-#
-#    print("Result:\n")
-#    print(res_dictionary)
-#
-#if __name__ == "__main__":
-#    main()
+def main():
+    sp = GoogleSpreadsheetParser("Devices1", "Main")
+    res_dictionary = sp.read_devices_from_spreadsheet()
+
+    print("Result:\n")
+    print(res_dictionary)
+
+if __name__ == "__main__":
+    main()
