@@ -141,12 +141,12 @@ class GoogleSpreadsheetParser(object):
 
         return True
 
-def main():
-    sp = GoogleSpreadsheetParser("Devices1", "Main")
-    res_dictionary = sp.read_devices_from_spreadsheet()
-
-    print("Result:\n")
-    print(res_dictionary)
-
-if __name__ == "__main__":
-    main()
+#def main():
+#    sp = GoogleSpreadsheetParser("Devices1", "Main")
+#    res_dictionary = sp.read_devices_from_spreadsheet()
+#
+#    print("Result:\n")
+#    print(res_dictionary)
+#
+#if __name__ == "__main__":
+#    main()
