@@ -12,7 +12,9 @@ Task Teardown   Stop Browser
 Add Devices
     Set Config    Delay    ${COMMON_DELAY}
     
+    #GoogleSpreadsheetParser.py
     &{d}=    Read Devices From Spreadsheet
+    #/GoogleSpreadsheetParser.py
     Parse Devices Dictionary    &{d}
 
     Log In    ${USERNAME}    ${PASSWORD}
@@ -37,7 +39,10 @@ Add Devices
     &{d}=    Create Dictionary From Lists    ${DEVICE_EUIS}    ${app_keys}
     Log Dictionary    ${d}
 
+    Log To Console    Updating the ${APPLICATION} spreadsheet.
+    #GoogleSpreadsheetParser.py
     ${f_written_to_spreadsheet}=    Write To Spreadsheet    ${d}
+    #/GoogleSpreadsheetParser.py
     
     IF    '${f_written_to_spreadsheet}'=='${True}'
         Log To Console    Successfully written app-keys to the Google doc.
@@ -48,7 +53,9 @@ Add Devices
 Delete Devices
     Set Config    Delay    ${COMMON_DELAY}
     
+    #GoogleSpreadsheetParser.py
     &{d}=    Read Devices From Spreadsheet
+    #/GoogleSpreadsheetParser.py
     Parse Devices Dictionary    &{d}
 
     Log In    ${USERNAME}    ${PASSWORD}
@@ -82,6 +89,7 @@ Delete Application
     Log In    ${USERNAME}    ${PASSWORD}
     Initialise And Open Application Screen    ${APPLICATION}    ${APPLICATION_PROFILE}
     ${res}=    Go To Application Devices    ${APPLICATION}
+    #Applications Table Contains Name    ${APPLICATION}
 
 #You know that it won't work, right?
 #It's a table, so has to be handled as devices.
@@ -92,43 +100,15 @@ Delete Application
     ELSE
         Fail    Was unable to delete the "${APPLICATION}" app.
     END
-
-Test
-    Set Config    Delay    ${COMMON_DELAY}
-    Log In    ${USERNAME}    ${PASSWORD}
-    Initialise And Open Application Screen    ${APPLICATION}    ${APPLICATION_PROFILE}
-    ${res}=    Go To Application Devices    ${APPLICATION}
-    IF  '${res}'=='${True}'
-        ${res}=    Devices Table Contains Eui    ${APPLICATION}    2cf7f12042007da2    ${False}
-        Log To Console    Device with eui 2cf7f12042007da2 is ${res}
-    ELSE
-        Fail    Was unable to reach the "${APPLICATION}" app.
-    END
-
-    ${res}=    Devices Table Switch To First Page    ${APPLICATION}
-    IF  '${res}'=='${True}'
-        ${res}=    Devices Table Contains Name    ${APPLICATION}    Device5    ${False}
-        Log To Console    Device name Device5 is ${res}
-    ELSE
-        Fail    Was unable to reach the "${APPLICATION}" app.
-    END
-
-    ${res}=    Devices Table Switch To First Page    ${APPLICATION}
-    IF  '${res}'=='${True}'
-        ${res}=    Devices Table Get Corresponding Name    ${APPLICATION}    2cf7f1204200708d    ${False}    ${True}
-        Log To Console    Device name for 2cf7f1204200708d is ${res}
-    ELSE
-        Fail    Was unable to reach the "${APPLICATION}" app.
-    END
-
 *** Keywords ***
 Initialise And Open Application Screen
     [Documentation]    Getting to the APPLICATION screen
     [Arguments]    ${app_name}    ${app_profile}
     ${res}=    Go To Applications
     Run Keyword If    '${res}'=='${False}'    Fail    Failed to switch to applications screen
-    ${res}=    Is Text    ${app_name}    1s
-    Run Keyword If    '${res}'=='${False}'    Setup Application    ${app_name}    ${app_profile}
+    ${app_is_present}=    Applications Table Contains Name    ${app_name}
+    Run Keyword If    '${app_is_present}'=='${False}'    Setup Application    ${app_name}    ${app_profile}
+    Run Keyword If    '${app_is_present}'=='${False}'    Applications Table Contains Name    ${app_name}
     Click Text    ${app_name}
     Verify Text    Devices
 

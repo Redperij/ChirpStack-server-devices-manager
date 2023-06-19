@@ -13,6 +13,7 @@ Library    GoogleSpreadsheetParser.py    ${APPLICATION}    ${SHEET}
 ${CONFIG_FILENAME}    local.config
 ${APPLICATION}    Devices1
 ${SHEET}    Main
+${TABLE_MAX_ROWS}    ${100}
 
 ${LOGIN_URL}    http://localhost:8080
 ${BROWSER}      Firefox
@@ -47,13 +48,16 @@ Go To Applications
 Go To Application
     [Documentation]    Opens certain application view.
     [Arguments]    ${app_name}
-    ${res}=    Is In Application    ${app_name}
-    IF    '${res}'=='${False}'
-        ${res}=    Go To Applications
-        Run Keyword If    '${res}'=='${True}'    Click Text    ${app_name}
-        ${res}=    Is In Application    ${app_name}
+    ${is_in_app}=    Is In Application    ${app_name}
+    IF    '${is_in_app}'=='${False}'
+        ${is_in_apps}=    Go To Applications
+        IF  '${is_in_apps}'=='${True}'
+            ${app_is_present}=    Applications Table Contains Name    ${app_name}                
+            Run Keyword If    '${app_is_present}'=='${True}'    Click Text    ${app_name}
+        END
+        ${is_in_app}=    Is In Application    ${app_name}
     END
-    [Return]    ${res}
+    [Return]    ${is_in_app}
 
 Go To Application Devices
     [Documentation]    Opens certain application's "Devices" view.
@@ -242,7 +246,7 @@ Devices Table Sheet Contains Name
     ${res}=    Set Variable    ${False}
 
     Use Table    xpath\=//table[@class\="MuiTable-root"]
-    FOR  ${i}  IN RANGE  ${100}
+    FOR  ${i}  IN RANGE  ${TABLE_MAX_ROWS}
         TRY
             ${candidate}=    Get Cell Text    r?${name}/c2    ${i}    0.2s
             IF  '${candidate}'=='${name}'
@@ -295,6 +299,62 @@ Devices Table Switch To First Page
     Go To Applications
     Go To Application    ${app_name}
     ${res}=    Go To Application Devices    ${app_name}
+    [Return]    ${res}
+
+####################################
+# APPLICATIONS TABLE ###############
+####################################
+#"Applications Table" keywords provide more convinient
+# navigation through the table of applications.
+
+Applications Table Contains Name
+    [Documentation]    Checks whether table contains the specified device name.
+    [Arguments]    ${app_name}    ${return}=${False}
+    ${res}=    Set Variable    ${False}
+    ${table_end}=    Set Variable    ${False}
+    ${arrow_index}=    Set Variable    ${1}
+
+    Go To Applications
+    
+    WHILE  '${table_end}'=='${False}'
+        ${res}=    Applications Table Sheet Contains Name    ${app_name}
+        IF  '${res}'=='${False}'
+            Set Config    Delay    0.5s
+            #We always have to press the right arrow. On the first page it is the only one clickable, so index is 1
+            #On all other pages it is second clickable element - thus index is 2.
+            #On the last page we still try to click second element and receive an exception.
+            TRY
+                Click Element    xpath\=//button[@class\="MuiButtonBase-root MuiIconButton-root MuiIconButton-colorInherit"]    0.5s    False    ${arrow_index}
+                ${arrow_index}=    Set Variable    ${2}
+            EXCEPT
+                ${table_end}=    Set Variable    ${True}
+            END
+            Set Config    Delay    ${COMMON_DELAY}
+        ELSE
+            ${table_end}=    Set Variable    ${True}
+        END
+    END
+    Run Keyword If    '${return}'=='${True}'    Go To Applications
+    [Return]    ${res}
+
+Applications Table Sheet Contains Name
+    [Documentation]    Checks a sheet of Devices table for the device with specified name.
+    [Arguments]    ${app_name}
+    ${res}=    Set Variable    ${False}
+
+    Use Table    xpath\=//table[@class\="MuiTable-root"]
+    FOR  ${i}  IN RANGE  ${TABLE_MAX_ROWS}
+        TRY
+            ${candidate}=    Get Cell Text    r?${app_name}/c2    ${i}    0.2s
+            IF  '${candidate}'=='${app_name}'
+                ${res}=    Set Variable    ${True}
+                BREAK
+            END
+        EXCEPT
+            BREAK
+        END
+    END
+    
     [Return]    ${res}
 
 ####################################
