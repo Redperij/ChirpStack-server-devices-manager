@@ -9,6 +9,7 @@ Task Teardown   Stop Browser
 *** Variables ***
 
 *** Tasks ***
+#TODO
 Add Devices
     Set Config    Delay    ${COMMON_DELAY}
     
@@ -18,7 +19,7 @@ Add Devices
     Parse Devices Dictionary    &{d}
 
     Log In    ${USERNAME}    ${PASSWORD}
-    Initialise And Open Application Screen    ${APPLICATION}    ${APPLICATION_PROFILE}
+    Initialise And Open Application Screen    ${APPLICATION}
 
     Go To Application Devices    ${APPLICATION}
     
@@ -50,6 +51,7 @@ Add Devices
         Log To Console    Failed to write app-keys to google doc.
     END
 
+#TODO
 Delete Devices
     Set Config    Delay    ${COMMON_DELAY}
     
@@ -59,7 +61,7 @@ Delete Devices
     Parse Devices Dictionary    &{d}
 
     Log In    ${USERNAME}    ${PASSWORD}
-    Initialise And Open Application Screen    ${APPLICATION}    ${APPLICATION_PROFILE}
+    Initialise And Open Application Screen    ${APPLICATION}
     Go To Application Devices    ${APPLICATION}
     
     ${dev_num}=    Get Length    ${DEVICE_NAMES}
@@ -70,10 +72,11 @@ Delete Devices
         Run Keyword If    '${res}'=='${True}'    Fail    Was unable to delete device "${dev_name}", aborting.
     END
 
+#TODO
 Delete All Devices
     Set Config    Delay    ${COMMON_DELAY}
     Log In    ${USERNAME}    ${PASSWORD}
-    Initialise And Open Application Screen    ${APPLICATION}    ${APPLICATION_PROFILE}
+    Initialise And Open Application Screen    ${APPLICATION}
     Go To Application Devices    ${APPLICATION}
 
     Use Table    xpath\=//table[@class\="MuiTable-root"]
@@ -87,48 +90,51 @@ Delete All Devices
 Delete Application
     Set Config    Delay    ${COMMON_DELAY}
     Log In    ${USERNAME}    ${PASSWORD}
-    Initialise And Open Application Screen    ${APPLICATION}    ${APPLICATION_PROFILE}
+    Initialise And Open Application Screen    ${APPLICATION}
     ${res}=    Go To Application Devices    ${APPLICATION}
-    #Applications Table Contains Name    ${APPLICATION}
 
-#You know that it won't work, right?
-#It's a table, so has to be handled as devices.
     IF  '${res}'=='${True}'
-        Click Text    Delete
-        Close Alert    Accept    5s
+        Click Text    Delete application
+        Type Text    xpath\=//input[@placeholder\="${APPLICATION}"]    ${APPLICATION}
+        Click Text    Delete    confirm you want to delete this application
+        ${is_app}=    Applications Table Contains Name    ${APPLICATION}    ${True}
         Verify No Text    ${APPLICATION}
+        Run Keyword If    '${is_app}'=='${True}'    Fail    Was unable to delete the "${APPLICATION}" app.
     ELSE
         Fail    Was unable to delete the "${APPLICATION}" app.
     END
+
+Test
+    Set Config    Delay    0
+    Log In    ${USERNAME}    ${PASSWORD}
+    Initialise And Open Application Screen    ${APPLICATION}
+    Go To Application    ${APPLICATION}
+
 *** Keywords ***
 Initialise And Open Application Screen
     [Documentation]    Getting to the APPLICATION screen
-    [Arguments]    ${app_name}    ${app_profile}
+    [Arguments]    ${app_name}
     ${res}=    Go To Applications
     Run Keyword If    '${res}'=='${False}'    Fail    Failed to switch to applications screen
     ${app_is_present}=    Applications Table Contains Name    ${app_name}
-    Run Keyword If    '${app_is_present}'=='${False}'    Setup Application    ${app_name}    ${app_profile}
+    Run Keyword If    '${app_is_present}'=='${False}'    Setup Application    ${app_name}
     Run Keyword If    '${app_is_present}'=='${False}'    Applications Table Contains Name    ${app_name}
     Click Text    ${app_name}
     Verify Text    Devices
 
 Setup Application
     [Documentation]    Creates the app.
-    [Arguments]    ${app_name}    ${app_profile}
-    Click Text    Create
-    Verify Text    Application name
+    [Arguments]    ${app_name}
+    Click Text    Add application
+    Verify Text    Description
     Type Text    xpath\=//input[@id\="name"]    ${app_name}
-    Type Text    xpath\=//input[@id\="description"]    ${app_name}
-    Set Config    Delay    0.5s
-    Click Text    Select service-profile    1
-    Click Text    ${app_profile}
-    Set Config    Delay    ${COMMON_DELAY}
-    Click Text    Create application
+    Type Text    xpath\=//textarea[@id\="description"]    ${app_name}
+    Click Text    Submit
 
 #Device naming convention:
 #Between apps: eui must be unique.
 #Inside an app: name and eui must be unique.
-
+#TODO
 Add Device
     [Documentation]    Adds a device with the specified name and eui
     ...    for the specified app. Assigns app-key to the device and returns it.
@@ -179,6 +185,7 @@ Add Device
     
     [Return]    ${app_key}    
 
+#TODO
 Delete Device
     [Documentation]    Deletes device from the specified app.
     ...    Does nothing if device was not found.
@@ -192,6 +199,7 @@ Delete Device
         Log To Console    Was unable to find device "${device_name}" in the table.
     END
 
+#TODO
 Update Device
     [Documentation]    Basically, just checks/creates the device app-key.
     ...    Always returns view to the "Application Devices"
@@ -214,6 +222,7 @@ Update Device
     END
     [Return]    ${app_key}
 
+#TODO
 Rename Device
     [Documentation]    Renames the device and checks the app-key.
     ...    Always returns view to the "Application Devices"
@@ -237,7 +246,7 @@ Rename Device
     END
     [Return]    ${app_key}
 
-
+#TODO
 Create Device
     [Documentation]    Handles the device creation.
     ...    Must be called from the "Device" screen.
@@ -271,6 +280,7 @@ Create Device
     
     [Return]    ${app_key}
 
+#TODO
 Generate App Key
     [Documentation]    Generates app key if called from the device's "Keys" view.
     Verify Text    Application key
@@ -278,23 +288,6 @@ Generate App Key
     ${app_key}=    Get Input Value    xpath\=//input[@id\="nwkKey"]
     Click Text    Set device-keys
     [Return]    ${app_key}
-
-#Should be python keyword.
-#Python must set two lists:
-#DEVICE_NAMES and DEVICE_EUIS
-#based on the data from the file or google doc.
-#Or it would be better to use Dictionary.
-#Read Devices From File
-#    #Append To List    ${DEVICE_NAMES}    Device1    Device2    Device3    Device4    Device5
-#    #Append To List    ${DEVICE_EUIS}    2cf7f12042007dff    2cf7f1204200708d    2cf7f120420036fe    2cf7f12042007da2    2cf7f12042007a39
-#    #Append To List    ${DEVICE_NAMES}    ice1    ice2    Devic3    Dice4    Devic    Dev5    ice7
-#    #Append To List    ${DEVICE_EUIS}    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56
-#    #Append To List    ${DEVICE_NAMES}    ice12    ice32    Devc    Dice    Devic43    De    ic7    ice1    ice2    Devic3    Dice4    Devic    Dev5    ice7
-#    #Append To List    ${DEVICE_EUIS}    2ca7f12042007fff    2af7f1234200708d    12f7f120420036fe    2c37f12052007da2    2a57f12042007a90    2cf7312042007a1a    2cf7c12942007a56    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56
-#    #Append To List    ${DEVICE_NAMES}    Device1    Device2    Device3    Device4    Device5    ice12    ice32    Devc    Dice    Devic43    De    ic7    ice1    ice2    Devic3    Dice4    Devic    Dev5    ice7    art    abba    Device200    f    DD
-#    #Append To List    ${DEVICE_EUIS}    2cf7f12042007dff    2cf7f1204200708d    2cf7f120420036fe    2cf7f12042007da2    2cf7f12042007a39    2ca7f12042007fff    2af7f1234200708d    12f7f120420036fe    2c37f12052007da2    2a57f12042007a90    2cf7312042007a1a    2cf7c12942007a56    2ca7f12042007dff    2af7f1204200708d    1cf7f120420036fe    2cd7f12052007da2    2af7f12042007a90    2cf7f12042007a1a    2cf7c12842007a56    2afba1204200708d    2abba1abba00708d    2cf7312ddda07a1a    ffffffffff007da2    4ef167e594428eba
-#    &{d}=    Create Dictionary    2cf7f12042007dff=Device1    2cf7f1204200708d=Device2    2cf7f120420036fe=Device3    2cf7f12042007da2=Device4    2cf7f12042007a39=Device5
-#    [Return]    &{d}
 
 Parse Devices Dictionary
     [Arguments]    &{dict}

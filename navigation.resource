@@ -19,7 +19,6 @@ ${LOGIN_URL}    http://localhost:8080
 ${BROWSER}      Firefox
 ${USERNAME}     admin
 ${PASSWORD}     admin
-${APPLICATION_PROFILE}    Lorix1_service
 ${DEVICE_PROFILE}    Metropolia_devices
 ${ORG_ID}    1
 @{DEVICE_NAMES}
@@ -37,14 +36,14 @@ Go To Applications
     ...    Must be logged in to use this keyword.
     ${res}=    Is In Applications
     IF    '${res}'=='${False}'
-        #Makes it viable only for the first organization.
-        #Take that into account later on.
-        Go To    ${LOGIN_URL}/#/organizations/${ORG_ID}/applications    10s
+        #Makes it viable only for the certain tenant.
+        #Take that into account later on and do it via tenant name.
+        Go To    ${LOGIN_URL}/#/tenants/${ORG_ID}/applications    10s
         ${res}=    Is In Applications
     END
 
     [Return]    ${res}
-    
+
 Go To Application
     [Documentation]    Opens certain application view.
     [Arguments]    ${app_name}
@@ -65,11 +64,13 @@ Go To Application Devices
     ${res}=    Is In Application Devices    ${app_name}
     IF    '${res}'=='${False}'
         ${res}=    Go To Application    ${app_name}
-        Run Keyword If    '${res}'=='${True}'    Click Text    Devices    Application Configuration
+        Run Keyword If    '${res}'=='${True}'    Click Text    Devices    Multicast groups
         ${res}=    Is In Application Devices    ${app_name}
     END
     [Return]    ${res}
 
+#TODO
+#Won't work. Has to be done via eui now.
 Go To Application Device
     [Documentation]    Opens certain application's certain device view.
     [Arguments]    ${app_name}    ${device_name}
@@ -88,7 +89,7 @@ Go To Application Device Config
     ${res}=    Is In Application Device Config    ${app_name}    ${device_name}
     IF    '${res}'=='${False}'
         ${res}=    Go To Application Device    ${app_name}    ${device_name}
-        Run Keyword If    '${res}'=='${True}'    Click Text    Configuration    Keys (OTAA)
+        Run Keyword If    '${res}'=='${True}'    Click Text    Configuration    OTAA keys
         ${res}=    Is In Application Device Config    ${app_name}    ${device_name}
     END
     [Return]    ${res}
@@ -99,7 +100,7 @@ Go To Application Device Keys
     ${res}=    Is In Application Device Keys    ${app_name}    ${device_name}
     IF    '${res}'=='${False}'
         ${res}=    Go To Application Device    ${app_name}    ${device_name}
-        Run Keyword If    '${res}'=='${True}'    Click Text    Keys (OTAA)    Configuration
+        Run Keyword If    '${res}'=='${True}'    Click Text    OTAA keys    Configuration
         ${res}=    Is In Application Device Keys    ${app_name}    ${device_name}
     END
     [Return]    ${res}
@@ -112,8 +113,8 @@ Go To Application Device Keys
 Is In Applications
     [Documentation]    Identifies, whether we are
     ...    in the "Applications" view.
-    ${res1}=    Is Element    xpath\=//table[@class\="MuiTable-root"]    1s
-    ${res2}=    Is Text    ID
+    ${res1}=    Is Element    xpath\=//table[@style\="table-layout: auto;"]    1s
+    ${res2}=    Is Text    Add application
     #What an utter crap. (res = res1 && res2)
     ${res}=    Set Variable If    '${res1}'=='${True}' and '${res2}'=='${True}'    ${True}    ${False}
     [Return]    ${res}
@@ -131,7 +132,7 @@ Is In Application Devices
     [Documentation]    Identifies, whether we are
     ...    in the application "Devices" view.
     [Arguments]    ${app_name}
-    ${res1}=    Is Text    ${app_name}    1s
+    ${res1}=    Is In Application    ${app_name}
     ${res2}=    Is Text    Last seen    1s
     ${res}=    Set Variable If    '${res1}'=='${True}' and '${res2}'=='${True}'    ${True}    ${False}
     [Return]    ${res}
@@ -143,7 +144,7 @@ Is In Application Device
     [Arguments]    ${app_name}    ${device_name}
     ${res1}=    Is Text    ${app_name}    1s
     ${res2}=    Is Text    ${device_name}    1s
-    ${res3}=    Is Text    Details    1s
+    ${res3}=    Is Text    OTAA keys    1s
     ${res}=    Set Variable If    '${res1}'=='${True}' and '${res2}'=='${True}' and '${res3}'=='${True}'    ${True}    ${False}
     [Return]    ${res}
 
@@ -172,7 +173,7 @@ Is In Application Device Keys
 ####################################
 #"Devices Table" keywords provide more convinient navigation
 # through the table of devices inside the application
-
+#TODO
 Devices Table Contains Eui
     [Documentation]    Checks whether table contains the specified eui.
     [Arguments]    ${app_name}    ${eui}    ${return}=${True}
@@ -202,6 +203,7 @@ Devices Table Contains Eui
     Run Keyword If    '${return}'=='${True}'    Devices Table Switch To First Page    ${app_name}
     [Return]    ${res}
 
+#TODO
 Devices Table Sheet Contains Eui
     [Documentation]    Checks a sheet of Devices table for the device with specified eui.
     [Arguments]    ${eui}
@@ -209,7 +211,7 @@ Devices Table Sheet Contains Eui
     ${res}=    Is Text    ${eui}    0.2s
     [Return]    ${res}
 
-
+#TODO
 Devices Table Contains Name
     [Documentation]    Checks whether table contains the specified device name.
     [Arguments]    ${app_name}    ${device_name}    ${return}=${True}
@@ -240,12 +242,13 @@ Devices Table Contains Name
     Run Keyword If    '${return}'=='${True}'    Devices Table Switch To First Page    ${app_name}
     [Return]    ${res}
 
+#TODO
 Devices Table Sheet Contains Name
     [Documentation]    Checks a sheet of Devices table for the device with specified name.
     [Arguments]    ${name}
     ${res}=    Set Variable    ${False}
 
-    Use Table    xpath\=//table[@class\="MuiTable-root"]
+    Use Table    Name
     FOR  ${i}  IN RANGE  ${TABLE_MAX_ROWS}
         TRY
             ${candidate}=    Get Cell Text    r?${name}/c2    ${i}    0.2s
@@ -260,6 +263,7 @@ Devices Table Sheet Contains Name
     
     [Return]    ${res}
 
+#TODO
 Devices Table Get Corresponding Name
     [Documentation]    Gets a device name corresponding to the specified eui.
     [Arguments]    ${app_name}    ${eui}    ${return}=${True}    ${same_sheet}=${False}
@@ -269,7 +273,7 @@ Devices Table Get Corresponding Name
     ${arrow_index}=    Set Variable    ${1}
 
     Run Keyword If    '${same_sheet}'=='${False}'    Devices Table Switch To First Page    ${app_name}
-    Use Table    xpath\=//table[@class\="MuiTable-root"]
+    Use Table    Name
     
     WHILE  '${table_end}'=='${False}'
         ${res}=    Devices Table Sheet Contains Eui    ${eui}
@@ -292,6 +296,7 @@ Devices Table Get Corresponding Name
     Run Keyword If    '${return}'=='${True}'    Devices Table Switch To First Page    ${app_name}
     [Return]    ${name}
 
+#TODO
 Devices Table Switch To First Page
     [Documentation]    Unconventionally swithces to the first page of devices table of specified application.
     #Can be done via pressing arrow in opposite direction, but it may take longer in case if there are a lot of entries.
@@ -308,11 +313,11 @@ Devices Table Switch To First Page
 # navigation through the table of applications.
 
 Applications Table Contains Name
-    [Documentation]    Checks whether table contains the specified device name.
+    [Documentation]    Checks whether table contains the specified application name.
     [Arguments]    ${app_name}    ${return}=${False}
     ${res}=    Set Variable    ${False}
     ${table_end}=    Set Variable    ${False}
-    ${arrow_index}=    Set Variable    ${1}
+    ${arrow_index}=    Set Variable    ${2}
 
     Go To Applications
     
@@ -320,14 +325,11 @@ Applications Table Contains Name
         ${res}=    Applications Table Sheet Contains Name    ${app_name}
         IF  '${res}'=='${False}'
             Set Config    Delay    0.5s
-            #We always have to press the right arrow. On the first page it is the only one clickable, so index is 1
-            #On all other pages it is second clickable element - thus index is 2.
-            #On the last page we still try to click second element and receive an exception.
-            TRY
-                Click Element    xpath\=//button[@class\="MuiButtonBase-root MuiIconButton-root MuiIconButton-colorInherit"]    0.5s    False    ${arrow_index}
-                ${arrow_index}=    Set Variable    ${2}
-            EXCEPT
+            ${disabled_next}=    Get Element Count    xpath\=//li[@class\="ant-pagination-next ant-pagination-disabled"]    0.5s
+            IF    '${disabled_next}'=='${1}'
                 ${table_end}=    Set Variable    ${True}
+            ELSE
+                Click Element    xpath\=//button[@class\="ant-pagination-item-link"]    0.5s    False    2
             END
             Set Config    Delay    ${COMMON_DELAY}
         ELSE
@@ -342,10 +344,10 @@ Applications Table Sheet Contains Name
     [Arguments]    ${app_name}
     ${res}=    Set Variable    ${False}
 
-    Use Table    xpath\=//table[@class\="MuiTable-root"]
+    Use Table    Name
     FOR  ${i}  IN RANGE  ${TABLE_MAX_ROWS}
         TRY
-            ${candidate}=    Get Cell Text    r?${app_name}/c2    ${i}    0.2s
+            ${candidate}=    Get Cell Text    r?${app_name}/c1    ${i}    0.2s
             IF  '${candidate}'=='${app_name}'
                 ${res}=    Set Variable    ${True}
                 BREAK
@@ -364,10 +366,10 @@ Applications Table Sheet Contains Name
 Log In
     [Documentation]    Tries to pass "Login" screen
     [Arguments]    ${username}    ${password}
-    Verify Text    Login
-    Type Text    xpath\=//input[@id\="username"]    ${username}
+    Verify Text    ChirpStack login
+    Type Text    xpath\=//input[@id\="email"]    ${username}
     Type Text    xpath\=//input[@id\="password"]    ${password}
-    Click Text    Login    2
+    Click Text    Submit
 
 Initialise
     ${login_url}=    Get From Config File    LOGIN_URL
@@ -378,13 +380,11 @@ Initialise
     Set Global Variable    ${USERNAME}    ${username}
     ${password}=    Get From Config File    PASSWORD
     Set Global Variable    ${PASSWORD}    ${password}
-    ${application_profile}=    Get From Config File    APPLICATION_PROFILE
-    Set Global Variable    ${APPLICATION_PROFILE}    ${application_profile}
     ${device_profile}=    Get From Config File    DEVICE_PROFILE
     Set Global Variable    ${DEVICE_PROFILE}    ${device_profile}
-    ${org_id}=    Get From Config File    ORGANIZATION_ID
+    ${org_id}=    Get From Config File    TENANT_ID
     Set Global Variable    ${ORG_ID}    ${org_id}
-    Log To Console    \nConfig: ${LOGIN_URL} ${BROWSER} ${USERNAME} ${PASSWORD} ${APPLICATION_PROFILE} ${DEVICE_PROFILE} ${ORG_ID}\n
+    Log To Console    \nConfig: ${LOGIN_URL} ${BROWSER} ${USERNAME} ${PASSWORD} ${DEVICE_PROFILE} ${ORG_ID}\n
     Start Browser    ${LOGIN_URL}    ${BROWSER}
 
 Start Browser
