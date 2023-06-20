@@ -69,39 +69,37 @@ Go To Application Devices
     END
     [Return]    ${res}
 
-#TODO
-#Won't work. Has to be done via eui now.
 Go To Application Device
     [Documentation]    Opens certain application's certain device view.
-    [Arguments]    ${app_name}    ${device_name}
-    ${res}=    Is In Application Device    ${app_name}    ${device_name}
+    [Arguments]    ${app_name}    ${eui}
+    ${res}=    Is In Application Device    ${app_name}    ${eui}
     IF    '${res}'=='${False}'
         ${res}=    Go To Application Devices    ${app_name}
-        ${res}=    Is Text    ${device_name}
-        Run Keyword If    '${res}'=='${True}'    Click Text    ${device_name}    Device name
-        ${res}=    Is In Application Device    ${app_name}    ${device_name}
+        ${res}=    Is Text    ${eui}
+        Run Keyword If    '${res}'=='${True}'    Click Text    ${eui}    Name
+        ${res}=    Is In Application Device    ${app_name}    ${eui}
     END
     [Return]    ${res}
 
 Go To Application Device Config
     [Documentation]    Opens specified device's configuration view.
-    [Arguments]    ${app_name}    ${device_name}
-    ${res}=    Is In Application Device Config    ${app_name}    ${device_name}
+    [Arguments]    ${app_name}    ${eui}
+    ${res}=    Is In Application Device Config    ${app_name}    ${eui}
     IF    '${res}'=='${False}'
-        ${res}=    Go To Application Device    ${app_name}    ${device_name}
+        ${res}=    Go To Application Device    ${app_name}    ${eui}
         Run Keyword If    '${res}'=='${True}'    Click Text    Configuration    OTAA keys
-        ${res}=    Is In Application Device Config    ${app_name}    ${device_name}
+        ${res}=    Is In Application Device Config    ${app_name}    ${eui}
     END
     [Return]    ${res}
 
 Go To Application Device Keys
     [Documentation]    Opens specified device's app-keys view.
-    [Arguments]    ${app_name}    ${device_name}
-    ${res}=    Is In Application Device Keys    ${app_name}    ${device_name}
+    [Arguments]    ${app_name}    ${eui}
+    ${res}=    Is In Application Device Keys    ${app_name}    ${eui}
     IF    '${res}'=='${False}'
-        ${res}=    Go To Application Device    ${app_name}    ${device_name}
+        ${res}=    Go To Application Device    ${app_name}    ${eui}
         Run Keyword If    '${res}'=='${True}'    Click Text    OTAA keys    Configuration
-        ${res}=    Is In Application Device Keys    ${app_name}    ${device_name}
+        ${res}=    Is In Application Device Keys    ${app_name}    ${eui}
     END
     [Return]    ${res}
 
@@ -141,9 +139,9 @@ Is In Application Devices
 Is In Application Device
     [Documentation]    Identifies, whether we are
     ...    in the application certain "Device" view.
-    [Arguments]    ${app_name}    ${device_name}
+    [Arguments]    ${app_name}    ${eui}
     ${res1}=    Is Text    ${app_name}    1s
-    ${res2}=    Is Text    ${device_name}    1s
+    ${res2}=    Is Text    ${eui}    1s
     ${res3}=    Is Text    OTAA keys    1s
     ${res}=    Set Variable If    '${res1}'=='${True}' and '${res2}'=='${True}' and '${res3}'=='${True}'    ${True}    ${False}
     [Return]    ${res}
@@ -151,9 +149,9 @@ Is In Application Device
 Is In Application Device Config
     [Documentation]    Identifies, whether we are
     ...    in the application certain device's "Configuration" view.
-    [Arguments]    ${app_name}    ${device_name}
+    [Arguments]    ${app_name}    ${eui}
     ${res1}=    Is Text    ${app_name}    1s
-    ${res2}=    Is Text    ${device_name}    1s
+    ${res2}=    Is Text    ${eui}    1s
     ${res3}=    Is Text    Variables    1s
     ${res}=    Set Variable If    '${res1}'=='${True}' and '${res2}'=='${True}' and '${res3}'=='${True}'    ${True}    ${False}
     [Return]    ${res}
@@ -161,9 +159,9 @@ Is In Application Device Config
 Is In Application Device Keys
     [Documentation]    Identifies, whether we are
     ...    in the application certain device's "Keys" view.
-    [Arguments]    ${app_name}    ${device_name}
+    [Arguments]    ${app_name}    ${eui}
     ${res1}=    Is Text    ${app_name}    1s
-    ${res2}=    Is Text    ${device_name}    1s
+    ${res2}=    Is Text    ${eui}    1s
     ${res3}=    Is Text    Application key    1s
     ${res}=    Set Variable If    '${res1}'=='${True}' and '${res2}'=='${True}' and '${res3}'=='${True}'    ${True}    ${False}
     [Return]    ${res}
@@ -173,28 +171,27 @@ Is In Application Device Keys
 ####################################
 #"Devices Table" keywords provide more convinient navigation
 # through the table of devices inside the application
-#TODO
 Devices Table Contains Eui
     [Documentation]    Checks whether table contains the specified eui.
     [Arguments]    ${app_name}    ${eui}    ${return}=${True}
     ${res}=    Set Variable    ${False}
     ${table_end}=    Set Variable    ${False}
-    ${arrow_index}=    Set Variable    ${1}
 
     Devices Table Switch To First Page    ${app_name}
-    
-    WHILE  '${table_end}'=='${False}'
+    ${empty_table}=    Is Text    No Data    0.5s
+
+    WHILE  '${table_end}'=='${False}' and '${empty_table}'!= '${True}'
         ${res}=    Devices Table Sheet Contains Eui    ${eui}
+        #Go forward inside the table.
         IF  '${res}'=='${False}'
-            #We always have to press the right arrow. On the first page it is the only one clickable, so index is 1
-            #On all other pages it is second clickable element - thus index is 2.
-            #On the last page we still try to click second element and receive an exception.
-            TRY 
-                Click Element    xpath\=//button[@class\="MuiButtonBase-root MuiIconButton-root MuiIconButton-colorInherit"]    0.5s    False    ${arrow_index}
-                ${arrow_index}=    Set Variable    ${2}
-            EXCEPT
+            Set Config    Delay    0.5s
+            ${disabled_next}=    Get Element Count    xpath\=//li[@class\="ant-pagination-next ant-pagination-disabled"]    0.5s
+            IF    '${disabled_next}'=='${1}'
                 ${table_end}=    Set Variable    ${True}
-            END 
+            ELSE
+                Click Element    xpath\=//button[@class\="ant-pagination-item-link"]    0.5s    False    2
+            END
+            Set Config    Delay    ${COMMON_DELAY}
         ELSE
             ${table_end}=    Set Variable    ${True}
         END
@@ -203,7 +200,6 @@ Devices Table Contains Eui
     Run Keyword If    '${return}'=='${True}'    Devices Table Switch To First Page    ${app_name}
     [Return]    ${res}
 
-#TODO
 Devices Table Sheet Contains Eui
     [Documentation]    Checks a sheet of Devices table for the device with specified eui.
     [Arguments]    ${eui}
@@ -211,28 +207,25 @@ Devices Table Sheet Contains Eui
     ${res}=    Is Text    ${eui}    0.2s
     [Return]    ${res}
 
-#TODO
 Devices Table Contains Name
     [Documentation]    Checks whether table contains the specified device name.
     [Arguments]    ${app_name}    ${device_name}    ${return}=${True}
     ${res}=    Set Variable    ${False}
     ${table_end}=    Set Variable    ${False}
-    ${arrow_index}=    Set Variable    ${1}
 
     Devices Table Switch To First Page    ${app_name}
+    ${empty_table}=    Is Text    No Data    0.5s
     
     WHILE  '${table_end}'=='${False}'
         ${res}=    Devices Table Sheet Contains Name    ${device_name}
-        IF  '${res}'=='${False}'
+        #Go forward inside the table.
+        IF  '${res}'=='${False}' and '${empty_table}'!= '${True}'
             Set Config    Delay    0.5s
-            #We always have to press the right arrow. On the first page it is the only one clickable, so index is 1
-            #On all other pages it is second clickable element - thus index is 2.
-            #On the last page we still try to click second element and receive an exception.
-            TRY
-                Click Element    xpath\=//button[@class\="MuiButtonBase-root MuiIconButton-root MuiIconButton-colorInherit"]    0.5s    False    ${arrow_index}
-                ${arrow_index}=    Set Variable    ${2}
-            EXCEPT
+            ${disabled_next}=    Get Element Count    xpath\=//li[@class\="ant-pagination-next ant-pagination-disabled"]    0.5s
+            IF    '${disabled_next}'=='${1}'
                 ${table_end}=    Set Variable    ${True}
+            ELSE
+                Click Element    xpath\=//button[@class\="ant-pagination-item-link"]    0.5s    False    2
             END
             Set Config    Delay    ${COMMON_DELAY}
         ELSE
@@ -242,7 +235,6 @@ Devices Table Contains Name
     Run Keyword If    '${return}'=='${True}'    Devices Table Switch To First Page    ${app_name}
     [Return]    ${res}
 
-#TODO
 Devices Table Sheet Contains Name
     [Documentation]    Checks a sheet of Devices table for the device with specified name.
     [Arguments]    ${name}
@@ -251,7 +243,7 @@ Devices Table Sheet Contains Name
     Use Table    Name
     FOR  ${i}  IN RANGE  ${TABLE_MAX_ROWS}
         TRY
-            ${candidate}=    Get Cell Text    r?${name}/c2    ${i}    0.2s
+            ${candidate}=    Get Cell Text    r?${name}/c?Name    ${i}    0.2s
             IF  '${candidate}'=='${name}'
                 ${res}=    Set Variable    ${True}
                 BREAK
@@ -263,43 +255,41 @@ Devices Table Sheet Contains Name
     
     [Return]    ${res}
 
-#TODO
 Devices Table Get Corresponding Name
     [Documentation]    Gets a device name corresponding to the specified eui.
     [Arguments]    ${app_name}    ${eui}    ${return}=${True}    ${same_sheet}=${False}
     ${name}=    Set Variable    ${None}
     ${res}=    Set Variable    ${False}
     ${table_end}=    Set Variable    ${False}
-    ${arrow_index}=    Set Variable    ${1}
 
     Run Keyword If    '${same_sheet}'=='${False}'    Devices Table Switch To First Page    ${app_name}
     Use Table    Name
+    ${empty_table}=    Is Text    No Data    0.5s
     
     WHILE  '${table_end}'=='${False}'
         ${res}=    Devices Table Sheet Contains Eui    ${eui}
-        IF  '${res}'=='${False}'
-            #We always have to press the right arrow. On the first page it is the only one clickable, so index is 1
-            #On all other pages it is second clickable element - thus index is 2.
-            #On the last page we still try to click second element and receive an exception.
-            TRY 
-                Click Element    xpath\=//button[@class\="MuiButtonBase-root MuiIconButton-root MuiIconButton-colorInherit"]    0.5s    False    ${arrow_index}
-                ${arrow_index}=    Set Variable    ${2}
-            EXCEPT
+        #Go forward inside the table.
+        IF  '${res}'=='${False}' and '${empty_table}'!= '${True}'
+            Set Config    Delay    0.5s
+            ${disabled_next}=    Get Element Count    xpath\=//li[@class\="ant-pagination-next ant-pagination-disabled"]    0.5s
+            IF    '${disabled_next}'=='${1}'
                 ${table_end}=    Set Variable    ${True}
-            END 
+            ELSE
+                Click Element    xpath\=//button[@class\="ant-pagination-item-link"]    0.5s    False    2
+            END
+            Set Config    Delay    ${COMMON_DELAY}
         ELSE
             #Log To Console    Getting corr name for: ${eui}\n
-            ${name}=    Get Cell Text    r?${eui}/c2    1    0.2s
+            ${name}=    Get Cell Text    r?${eui}/c?Name    1    0.2s
             ${table_end}=    Set Variable    ${True}
         END
     END
     Run Keyword If    '${return}'=='${True}'    Devices Table Switch To First Page    ${app_name}
     [Return]    ${name}
 
-#TODO
 Devices Table Switch To First Page
     [Documentation]    Unconventionally swithces to the first page of devices table of specified application.
-    #Can be done via pressing arrow in opposite direction, but it may take longer in case if there are a lot of entries.
+    #Can be done simpler way now, I bet.
     [Arguments]    ${app_name}
     Go To Applications
     Go To Application    ${app_name}
@@ -320,10 +310,12 @@ Applications Table Contains Name
     ${arrow_index}=    Set Variable    ${2}
 
     Go To Applications
+    ${empty_table}=    Is Text    No Data    0.5s
     
     WHILE  '${table_end}'=='${False}'
         ${res}=    Applications Table Sheet Contains Name    ${app_name}
-        IF  '${res}'=='${False}'
+        #Go forward inside the table.
+        IF  '${res}'=='${False}' and '${empty_table}'!= '${True}'
             Set Config    Delay    0.5s
             ${disabled_next}=    Get Element Count    xpath\=//li[@class\="ant-pagination-next ant-pagination-disabled"]    0.5s
             IF    '${disabled_next}'=='${1}'

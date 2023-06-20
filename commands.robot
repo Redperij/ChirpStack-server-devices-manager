@@ -9,7 +9,6 @@ Task Teardown   Stop Browser
 *** Variables ***
 
 *** Tasks ***
-#TODO
 Add Devices
     Set Config    Delay    ${COMMON_DELAY}
     
@@ -51,7 +50,6 @@ Add Devices
         Log To Console    Failed to write app-keys to google doc.
     END
 
-#TODO
 Delete Devices
     Set Config    Delay    ${COMMON_DELAY}
     
@@ -66,10 +64,10 @@ Delete Devices
     
     ${dev_num}=    Get Length    ${DEVICE_NAMES}
     FOR  ${i}  IN RANGE  ${dev_num}
-        ${dev_name}=    Get From List    ${DEVICE_NAMES}    ${i}
-        Delete Device    ${APPLICATION}    ${dev_name}
-        ${res}=    Devices Table Contains Name    ${APPLICATION}    ${dev_name}    ${False}
-        Run Keyword If    '${res}'=='${True}'    Fail    Was unable to delete device "${dev_name}", aborting.
+        ${dev_eui}=    Get From List    ${DEVICE_EUIS}    ${i}
+        Delete Device    ${APPLICATION}    ${dev_eui}
+        ${res}=    Devices Table Contains Eui    ${APPLICATION}    ${dev_eui}    ${False}
+        Run Keyword If    '${res}'=='${True}'    Fail    Was unable to delete device "${dev_eui}", aborting.
     END
 
 #TODO
@@ -135,6 +133,7 @@ Setup Application
 #Between apps: eui must be unique.
 #Inside an app: name and eui must be unique.
 #TODO
+#No wrong eui action
 Add Device
     [Documentation]    Adds a device with the specified name and eui
     ...    for the specified app. Assigns app-key to the device and returns it.
@@ -155,7 +154,6 @@ Add Device
             IF  '${same_name}'=='${True}'
                 #We have same eui not in the same row with the same name
                 #Give a warning, do nothing.
-                #${app_key}=    Update Device    ${app_name}    ${corr_name}
                 ${app_key}=    Set Variable    ERROR:"'${eui}' is associated with '${corr_name}' device. Device '${name}' cannot be created."
                 Devices Table Contains Eui    ${app_name}    ${eui}    ${False}
                 Run Keyword And Warn On Failure    Fail    Device's '${name}' EUI (${eui}) is held by '${corr_name}' device.
@@ -167,14 +165,17 @@ Add Device
             
         ELSE
             #Device already exists
-            ${app_key}=    Update Device    ${app_name}    ${name}    ${True}
+            ${app_key}=    Update Device    ${app_name}    ${eui}    ${True}
         END
         
     ELSE
         ${same_name}=    Devices Table Contains Name    ${app_name}    ${name}    ${False}
         IF  '${same_name}'=='${True}'
             #Wrong eui
-            Delete Device    ${app_name}    ${name}    ${True}
+            
+            #Won't work.
+            #TODO: "Delete by name"
+            #Delete Device    ${app_name}    ${name}    ${True}
             ${app_key}=    Create Device    ${name}    ${eui}    ${device_profile}
         ELSE
             #No such device
@@ -185,84 +186,86 @@ Add Device
     
     [Return]    ${app_key}    
 
-#TODO
 Delete Device
     [Documentation]    Deletes device from the specified app.
     ...    Does nothing if device was not found.
-    [Arguments]    ${app_name}    ${device_name}    ${on_screen}=${False}
-    Run Keyword If    '${on_screen}'=='${False}'    Devices Table Contains Name    ${app_name}    ${device_name}    ${False}
-    ${res}=    Go To Application Device    ${app_name}    ${device_name}
+    [Arguments]    ${app_name}    ${eui}    ${on_screen}=${False}
+    Run Keyword If    '${on_screen}'=='${False}'    Devices Table Contains Eui    ${app_name}    ${eui}    ${False}
+    ${res}=    Go To Application Device    ${app_name}    ${eui}
+    #Won't work
     IF  '${res}'=='${True}'
-        Click Text    Delete
-        Close Alert    Accept    5s
+        Click Text    Delete device
+        ${name_to_delete}=    Devices Table Get Corresponding Name    ${app_name}    ${eui}    ${False}
+        Type Text    xpath\=//input[@placeholder\="${name_to_delete}"]    ${name_to_delete}
+        Click Text    Delete    confirm you want to delete this device
     ELSE
-        Log To Console    Was unable to find device "${device_name}" in the table.
+        Log To Console    Was unable to find device "${eui}" in the table.
     END
 
-#TODO
 Update Device
     [Documentation]    Basically, just checks/creates the device app-key.
     ...    Always returns view to the "Application Devices"
-    [Arguments]    ${app_name}    ${device_name}    ${on_screen}=${False}
-    Run Keyword If    '${on_screen}'=='${False}'    Devices Table Contains Name    ${app_name}    ${device_name}    ${False}
-    ${res}=    Go To Application Device Keys    ${app_name}    ${device_name}
+    [Arguments]    ${app_name}    ${eui}    ${on_screen}=${False}
+    Run Keyword If    '${on_screen}'=='${False}'    Devices Table Contains Eui    ${app_name}    ${eui}    ${False}
+    #Need an eui in here.
+    ${res}=    Go To Application Device Keys    ${app_name}    ${eui}
     IF  '${res}'=='${True}'
         #Checking the app key.
         Verify Text    Application key
         TRY
-            ${app_key}=    Get Input Value    xpath\=//input[@id\="nwkKey"]    1    1s
+            ${app_key}=    Get Input Value    xpath\=//input[@id\="nwkKeyRender"]    1    1s
         EXCEPT
             #We don't have an app key, what a shame.
             ${app_key}=    Generate App Key
         END
         Go To Application Devices    ${app_name}        
     ELSE
-        Run Keyword And Warn On Failure    Fail    Was unable to update the '${device_name}' device. Does it actually exist?
-        ${app_key}=    Set Variable    ERROR:"'${device_name}' unaccessible."
+        Run Keyword And Warn On Failure    Fail    Was unable to update the '${eui}' device. Does it actually exist?
+        ${app_key}=    Set Variable    ERROR:"'${eui}' unaccessible."
     END
     [Return]    ${app_key}
 
-#TODO
 Rename Device
     [Documentation]    Renames the device and checks the app-key.
     ...    Always returns view to the "Application Devices"
     [Arguments]    ${app_name}    ${old_name}    ${eui}    ${new_name}    ${device_profile}    ${on_screen}=${False}
     Run Keyword If    '${on_screen}'=='${False}'    Devices Table Contains Name    ${app_name}    ${old_name}    ${False}
-    ${res}=    Go To Application Device Config    ${app_name}    ${old_name}
+    ${res}=    Go To Application Device Config    ${app_name}    ${eui}
     IF  '${res}'=='${True}'
         Type Text    xpath\=//input[@id\="name"]    ${new_name}    clear_key={CONTROL + a}
-        Type Text    xpath\=//input[@id\="description"]    ${new_name}    clear_key={CONTROL + a}
+        Type Text    xpath\=//textarea[@id\="description"]    ${new_name}    clear_key={CONTROL + a}
         Set Config    Delay    0.5s
-        Click Element    xpath\=//input[@id\="deviceProfileID"]
+        #TODO: Implement somethng that we will be able to freaking click on.
+        Click Element    xpath\=//svg[@viewBox\="64 64 896 896"]    index=3
         Click Text    ${device_profile}
         Set Config    Delay    ${COMMON_DELAY}
-        Click Text    Update device
+        Click Text    Submit
 
         Devices Table Contains Name    ${app_name}    ${new_name}    ${False}
-        ${app_key}=    Update Device    ${app_name}    ${new_name}    ${True}
+        ${app_key}=    Update Device    ${app_name}    ${eui}    ${True}
     ELSE
         Run Keyword And Warn On Failure    Fail    Was unable to rename the '${old_name}' device. Does it actually exist?
         ${app_key}=    Set Variable    ERROR:"Device with eui: '${eui}' unaccessible."
     END
     [Return]    ${app_key}
 
-#TODO
 Create Device
     [Documentation]    Handles the device creation.
     ...    Must be called from the "Device" screen.
     ...    Returns app-key
     [Arguments]    ${name}    ${eui}    ${device_profile}
     
-    Click Text    Create
-    Verify Text    Device name
+    Click Text    Add device
+    Verify Text    Variables
     Type Text    xpath\=//input[@id\="name"]    ${name}
-    Type Text    xpath\=//input[@id\="description"]    ${name}
-    Type Text    xpath\=//input[@id\="devEUI"]    ${eui}
+    Type Text    xpath\=//textarea[@id\="description"]    Added by robotframework
+    Type Text    xpath\=//input[@id\="devEuiRender"]    ${eui}
     Set Config    Delay    0.5s
-    Click Text    Device-profile    Disable frame-counter validation
+    #TODO: Implement somethng that we will be able to freaking click on.
+    Click Element    xpath\=//svg[@viewBox\="64 64 896 896"]    index=3
     Click Text    ${device_profile}
     Set Config    Delay    ${COMMON_DELAY}
-    Click Text    Create device
+    Click Text    Submit
     
     #NOTE: If device (same eui) exists at least in one app - server won't allow us to create a device.
     #This is painful, since the only way to fix it would be to go through all apps and delete the device.
@@ -280,13 +283,12 @@ Create Device
     
     [Return]    ${app_key}
 
-#TODO
 Generate App Key
     [Documentation]    Generates app key if called from the device's "Keys" view.
     Verify Text    Application key
-    Click Element    xpath\=//*[@title\="Generate random key."]
-    ${app_key}=    Get Input Value    xpath\=//input[@id\="nwkKey"]
-    Click Text    Set device-keys
+    Click Element    xpath\=//button[@class\="ant-btn ant-btn-circle ant-btn-text ant-btn-sm"]
+    ${app_key}=    Get Input Value    xpath\=//input[@id\="nwkKeyRender"]
+    Click Text    Submit
     [Return]    ${app_key}
 
 Parse Devices Dictionary
