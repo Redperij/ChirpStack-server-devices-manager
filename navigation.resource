@@ -184,14 +184,8 @@ Devices Table Contains Eui
         ${res}=    Devices Table Sheet Contains Eui    ${eui}
         #Go forward inside the table.
         IF  '${res}'=='${False}'
-            Set Config    Delay    0.5s
-            ${disabled_next}=    Get Element Count    xpath\=//li[@class\="ant-pagination-next ant-pagination-disabled"]    0.5s
-            IF    '${disabled_next}'=='${1}'
-                ${table_end}=    Set Variable    ${True}
-            ELSE
-                Click Element    xpath\=//button[@class\="ant-pagination-item-link"]    0.5s    False    2
-            END
-            Set Config    Delay    ${COMMON_DELAY}
+            ${table_end}=    Table Next
+            ${table_end}=    Evaluate    not ${table_end}
         ELSE
             ${table_end}=    Set Variable    ${True}
         END
@@ -220,14 +214,8 @@ Devices Table Contains Name
         ${res}=    Devices Table Sheet Contains Name    ${device_name}
         #Go forward inside the table.
         IF  '${res}'=='${False}' and '${empty_table}'!= '${True}'
-            Set Config    Delay    0.5s
-            ${disabled_next}=    Get Element Count    xpath\=//li[@class\="ant-pagination-next ant-pagination-disabled"]    0.5s
-            IF    '${disabled_next}'=='${1}'
-                ${table_end}=    Set Variable    ${True}
-            ELSE
-                Click Element    xpath\=//button[@class\="ant-pagination-item-link"]    0.5s    False    2
-            END
-            Set Config    Delay    ${COMMON_DELAY}
+            ${table_end}=    Table Next
+            ${table_end}=    Evaluate    not ${table_end}
         ELSE
             ${table_end}=    Set Variable    ${True}
         END
@@ -255,6 +243,29 @@ Devices Table Sheet Contains Name
     
     [Return]    ${res}
 
+Devices Table Sheet Get Name Row
+    [Documentation]    Checks a sheet of Devices table for the device with specified name and gives its row.
+    ...    If not found, gives 0.
+    [Arguments]    ${name}
+    ${name_row}=    Set Variable    ${0}
+
+    Use Table    Name
+    FOR  ${i}  IN RANGE  ${TABLE_MAX_ROWS}
+        TRY
+            ${candidate}=    Get Cell Text    r?${name}/c?Name    ${i}    0.2s
+            ${candidate_eui}=    Get Cell Text    r?${name}/c?DevEUI    ${i}    0.2s
+            ${candidate_row}=    Get Table Row    ${candidate}    ${candidate_eui}    0.2s
+            IF  '${candidate}'=='${name}'
+                ${name_row}=    Set Variable    ${candidate_row}
+                BREAK
+            END
+        EXCEPT
+            BREAK
+        END
+    END
+    
+    [Return]    ${name_row}
+
 Devices Table Get Corresponding Name
     [Documentation]    Gets a device name corresponding to the specified eui.
     [Arguments]    ${app_name}    ${eui}    ${return}=${True}    ${same_sheet}=${False}
@@ -270,14 +281,8 @@ Devices Table Get Corresponding Name
         ${res}=    Devices Table Sheet Contains Eui    ${eui}
         #Go forward inside the table.
         IF  '${res}'=='${False}' and '${empty_table}'!= '${True}'
-            Set Config    Delay    0.5s
-            ${disabled_next}=    Get Element Count    xpath\=//li[@class\="ant-pagination-next ant-pagination-disabled"]    0.5s
-            IF    '${disabled_next}'=='${1}'
-                ${table_end}=    Set Variable    ${True}
-            ELSE
-                Click Element    xpath\=//button[@class\="ant-pagination-item-link"]    0.5s    False    2
-            END
-            Set Config    Delay    ${COMMON_DELAY}
+            ${table_end}=    Table Next
+            ${table_end}=    Evaluate    not ${table_end}
         ELSE
             #Log To Console    Getting corr name for: ${eui}\n
             ${name}=    Get Cell Text    r?${eui}/c?Name    1    0.2s
@@ -286,6 +291,32 @@ Devices Table Get Corresponding Name
     END
     Run Keyword If    '${return}'=='${True}'    Devices Table Switch To First Page    ${app_name}
     [Return]    ${name}
+
+Devices Table Get Corresponding Eui
+    [Documentation]    Gets device eui corresponding to the first occurance of a specified name.
+    [Arguments]    ${app_name}    ${dev_name}    ${return}=${True}    ${same_sheet}=${False}
+    ${eui}=    Set Variable    ${None}
+    ${res}=    Set Variable    ${False}
+    ${table_end}=    Set Variable    ${False}
+
+    Run Keyword If    '${same_sheet}'=='${False}'    Devices Table Switch To First Page    ${app_name}
+    Use Table    Name
+    ${empty_table}=    Is Text    No Data    0.5s
+    
+    WHILE  '${table_end}'=='${False}'
+        ${row_with_name}=    Devices Table Sheet Get Name Row    ${dev_name}
+        #Go forward inside the table.
+        IF  '${row_with_name}'=='${0}' and '${empty_table}'!= '${True}'
+            ${table_end}=    Table Next
+            ${table_end}=    Evaluate    not ${table_end}
+        ELSE
+            #Log To Console    Getting corr eui for: ${dev_name}\n
+            ${eui}=    Get Cell Text    r${row_with_name}/c?DevEUI    1    0.2s
+            ${table_end}=    Set Variable    ${True}
+        END
+    END
+    Run Keyword If    '${return}'=='${True}'    Devices Table Switch To First Page    ${app_name}
+    [Return]    ${eui}
 
 Devices Table Switch To First Page
     [Documentation]    Unconventionally swithces to the first page of devices table of specified application.
@@ -316,14 +347,8 @@ Applications Table Contains Name
         ${res}=    Applications Table Sheet Contains Name    ${app_name}
         #Go forward inside the table.
         IF  '${res}'=='${False}' and '${empty_table}'!= '${True}'
-            Set Config    Delay    0.5s
-            ${disabled_next}=    Get Element Count    xpath\=//li[@class\="ant-pagination-next ant-pagination-disabled"]    0.5s
-            IF    '${disabled_next}'=='${1}'
-                ${table_end}=    Set Variable    ${True}
-            ELSE
-                Click Element    xpath\=//button[@class\="ant-pagination-item-link"]    0.5s    False    2
-            END
-            Set Config    Delay    ${COMMON_DELAY}
+            ${table_end}=    Table Next
+            ${table_end}=    Evaluate    not ${table_end}
         ELSE
             ${table_end}=    Set Variable    ${True}
         END
@@ -354,6 +379,20 @@ Applications Table Sheet Contains Name
 ####################################
 # MISCELLANEOUS ####################
 ####################################
+Table Next
+    [Documentation]    Presses next page button
+    ...    of the table, if possible.
+    ${switch_successful}=    Set Variable    ${False}
+    Set Config    Delay    0.5s
+    ${disabled_next}=    Get Element Count    xpath\=//li[@class\="ant-pagination-next ant-pagination-disabled"]    0.5s
+    IF    '${disabled_next}'=='${1}'
+        ${switch_successful}=    Set Variable    ${False}
+    ELSE
+        Click Element    xpath\=//button[@class\="ant-pagination-item-link"]    0.5s    False    2
+        ${switch_successful}=    Set Variable    ${True}
+    END
+    Set Config    Delay    ${COMMON_DELAY}
+    [Return]    ${switch_successful}
 
 Log In
     [Documentation]    Tries to pass "Login" screen

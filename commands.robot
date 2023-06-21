@@ -70,19 +70,18 @@ Delete Devices
         Run Keyword If    '${res}'=='${True}'    Fail    Was unable to delete device "${dev_eui}", aborting.
     END
 
-#TODO
 Delete All Devices
     Set Config    Delay    ${COMMON_DELAY}
     Log In    ${USERNAME}    ${PASSWORD}
     Initialise And Open Application Screen    ${APPLICATION}
     Go To Application Devices    ${APPLICATION}
 
-    Use Table    xpath\=//table[@class\="MuiTable-root"]
-    ${stop}=    Is Text    0-0 of 0    0.2s
+    Use Table    Name
+    ${stop}=    Is Text    No Data    0.2s
     WHILE  '${stop}'=='${False}'
-        ${dev_name}=    Get Cell Text    r1c2
-        Delete Device    ${APPLICATION}    ${dev_name}    ${True}
-        ${stop}=    Is Text    0-0 of 0    0.5s
+        ${dev_eui}=    Get Cell Text    r2/c?DevEUI    
+        Delete Device    ${APPLICATION}    ${dev_eui}    ${True}
+        ${stop}=    Is Text    No Data    0.5s
     END
 
 Delete Application
@@ -133,7 +132,7 @@ Setup Application
 #Between apps: eui must be unique.
 #Inside an app: name and eui must be unique.
 #TODO
-#No wrong eui action
+#Questionable wrong eui action
 Add Device
     [Documentation]    Adds a device with the specified name and eui
     ...    for the specified app. Assigns app-key to the device and returns it.
@@ -172,11 +171,15 @@ Add Device
         ${same_name}=    Devices Table Contains Name    ${app_name}    ${name}    ${False}
         IF  '${same_name}'=='${True}'
             #Wrong eui
-            
-            #Won't work.
-            #TODO: "Delete by name"
+            #RECURSION IN ROBOT FRAMEWORK!?
+            #YOU ARE BOLNOY CHELOVEK!
+            #Theoretically, it will clean up the whole table of the same names. (Do I really need to?)
+            ${dev_eui_to_delete}=    Devices Table Get Corresponding Eui    ${app_name}    ${name}    ${False}    ${True}
+            Delete Device    ${app_name}    ${dev_eui_to_delete}    ${True}
+            ${app_key}=    Add Device    ${app_name}    ${name}    ${eui}    ${device_profile}
+
             #Delete Device    ${app_name}    ${name}    ${True}
-            ${app_key}=    Create Device    ${name}    ${eui}    ${device_profile}
+            #${app_key}=    Create Device    ${name}    ${eui}    ${device_profile}
         ELSE
             #No such device
             ${app_key}=    Create Device    ${name}    ${eui}    ${device_profile}
@@ -191,13 +194,12 @@ Delete Device
     ...    Does nothing if device was not found.
     [Arguments]    ${app_name}    ${eui}    ${on_screen}=${False}
     Run Keyword If    '${on_screen}'=='${False}'    Devices Table Contains Eui    ${app_name}    ${eui}    ${False}
+    ${name_to_delete}=    Devices Table Get Corresponding Name    ${app_name}    ${eui}    ${False}    ${True}
     ${res}=    Go To Application Device    ${app_name}    ${eui}
-    #Won't work
     IF  '${res}'=='${True}'
         Click Text    Delete device
-        ${name_to_delete}=    Devices Table Get Corresponding Name    ${app_name}    ${eui}    ${False}
-        Type Text    xpath\=//input[@placeholder\="${name_to_delete}"]    ${name_to_delete}
-        Click Text    Delete    confirm you want to delete this device
+        Type Text    xpath\=//input[@placeholder\="${name_to_delete}"]    ${name_to_delete}    clear_key={CONTROL + a}
+        Click Text    Delete    to confirm you want to delete this
     ELSE
         Log To Console    Was unable to find device "${eui}" in the table.
     END
@@ -235,8 +237,7 @@ Rename Device
         Type Text    xpath\=//input[@id\="name"]    ${new_name}    clear_key={CONTROL + a}
         Type Text    xpath\=//textarea[@id\="description"]    ${new_name}    clear_key={CONTROL + a}
         Set Config    Delay    0.5s
-        #TODO: Implement somethng that we will be able to freaking click on.
-        Click Element    xpath\=//svg[@viewBox\="64 64 896 896"]    index=3
+        Click Element    xpath\=//span[@class\="ant-select-selection-item"]    index=2
         Click Text    ${device_profile}
         Set Config    Delay    ${COMMON_DELAY}
         Click Text    Submit
@@ -261,8 +262,7 @@ Create Device
     Type Text    xpath\=//textarea[@id\="description"]    Added by robotframework
     Type Text    xpath\=//input[@id\="devEuiRender"]    ${eui}
     Set Config    Delay    0.5s
-    #TODO: Implement somethng that we will be able to freaking click on.
-    Click Element    xpath\=//svg[@viewBox\="64 64 896 896"]    index=3
+    Click Element    xpath\=//div[@class\="ant-select ant-select-in-form-item ant-select-single ant-select-show-arrow ant-select-show-search"]
     Click Text    ${device_profile}
     Set Config    Delay    ${COMMON_DELAY}
     Click Text    Submit
