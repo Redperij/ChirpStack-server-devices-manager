@@ -1,9 +1,10 @@
 # - Used for comments, escaped by '\'
+# No way to escape the escape char: "\\#Comment". Just don't do that.
+# Adding another '\' not before the '#' will do the trick. To get: "Hey \#", it is enough to write: "Hey \\#".
 
 ####################################
 #    Google API related settings   #
 ####################################
-
 
 #e-mail, configured through the console.cloud.google.com IAM, that has access to the google sheet and key.
 EMAIL:"name@orgname.iam.gserviceaccount.com"
