@@ -40,16 +40,91 @@ class GoogleSpreadsheetParser(object):
         raw_key_contents = self._worksheet.get_all_records()
         res_list = []
         for row in raw_key_contents:
-            res_list.append(row[key_name].strip())
+            res_list.append(str(row[key_name]).strip())
 
         return res_list
     
+    def write_duplicate_error(self, key_name, orig_ind, dup_ind):
+        error_cell = self._worksheet.find("ERROR")
+        self._worksheet.update_cell(dup_ind + 2, error_cell.col, "ERROR: device is a duplicate of device in a row %d. Same %s" % (orig_ind + 2, key_name))
+    
+    def write_wrong_eui_error(self, ind, eui):
+        error_cell = self._worksheet.find("ERROR")
+        self._worksheet.update_cell(ind + 2, error_cell.col, "ERROR: device has corrupted eui (%s). Has to consist of 16 characters from \"0123456789abcdef\"" % (eui))
+
+    def write_wrong_name_error(self, ind, name):
+        error_cell = self._worksheet.find("ERROR")
+        self._worksheet.update_cell(ind + 2, error_cell.col, "ERROR: device has corrupted name (%s). Only alphanumeric characters are allowed." % name)
+
+    def write_empty_error(self, ind, key):
+        error_cell = self._worksheet.find("ERROR")
+        self._worksheet.update_cell(ind + 2, error_cell.col, "ERROR: device has empty %s." % key)
+
+    def verify_eui(self, eui):
+        return_val = True
+        for char in eui:
+            if("0123456789abcdef".find(char) == -1):
+                return_val = False
+        if (len(eui) != 16):
+            return_val = False
+
+        return return_val
+
+    def verify_and_delete_duplicates(self, devices, euis):
+        #0. Clear indexes with empty fields.
+        for i in range(0, len(euis)):
+            if(euis[i] == ""):
+                self.write_empty_error(i, "eui")
+                euis[i] = ""
+                devices[i] = ""
+            else:
+                if(devices[i] == ""):
+                    self.write_empty_error(i, "device name")
+                    euis[i] = ""
+                    devices[i] = ""
+
+        #1. Clear indexes with incorrect euis and non-alphanumeric names
+        for i in range(0, len(euis)):
+            euis[i].lower()
+            if((euis[i] != "") and (self.verify_eui(euis[i]) == False)):
+                self.write_wrong_eui_error(i, euis[i])
+                euis[i] = ""
+                devices[i] = ""
+            if((devices[i] != "") and (devices[i].isalnum() == False)):
+                self.write_wrong_name_error(i, devices[i])
+                euis[i] = ""
+                devices[i] = ""
+        
+        #2. Clear indexes with duplicate euis.
+        for i in range(0, len(euis) - 1):
+            for q in range(i + 1, len(euis)):
+                if((euis[i] != "") and (euis[i] == euis[q])):
+                    self.write_duplicate_error("EUI", i, q)
+                    euis[q] = ""
+                    devices[q] = ""
+
+        #3. Clear indexes with duplicate names.
+        for i in range(0, len(devices) - 1):
+            for q in range(i + 1, len(devices)):
+                if((devices[i] != "") and (devices[i] == devices[q])):
+                    self.write_duplicate_error("Device name", i, q)
+                    euis[q] = ""
+                    devices[q] = ""
+        
+        #Remove all empty entries.
+        while(euis.count("") != 0):
+            euis.remove("")
+
+        while(devices.count("") != 0):
+            devices.remove("")
+
     def read_devices_from_spreadsheet(self):
         if(self._f_opened_worksheet == False):
            return None
 
         devices = self.get_list_of("Device name")
         euis = self.get_list_of("EUI")
+        self.verify_and_delete_duplicates(devices, euis)
         resdict = dict(zip(euis, devices))
         return resdict
     

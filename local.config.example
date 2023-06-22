@@ -24,12 +24,8 @@ LOGIN_URL:"http://localhost:8080"
 #Browser used by robotframework
 BROWSER:"Firefox"
 
-#Application profile to choose from dropdown menu upon application creation.
-APPLICATION_PROFILE:"Lorix1_service"
-
 #Device profile to choose from dropdown menu upon device creation.
 DEVICE_PROFILE:"Metropolia_devices"
 
-#Organization id (can be found inside the link .../organizations/[?]/applications)
-#Usually will be '1', if original organization is used
-ORGANIZATION_ID:"1"
+#Tenant id (can be found in Tenants)
+TENANT_ID:"52f14cd4-c6f1-4fbd-8f87-4025e1d49242"
