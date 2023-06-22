@@ -4,6 +4,7 @@ Documentation    This resource file provides keywords
 ...              web UI for the LoraWan server.
 
 Library    Collections
+Library    String
 Library    QWeb
 Library    ConfigFileParser.py    ${CONFIG_FILENAME}
 Library    GoogleSpreadsheetParser.py    ${APPLICATION}    ${SHEET}
@@ -20,7 +21,8 @@ ${BROWSER}      Firefox
 ${USERNAME}     admin
 ${PASSWORD}     admin
 ${DEVICE_PROFILE}    Metropolia_devices
-${ORG_ID}    1
+${TENANT_NAME}    ChirpStack
+${TENANT_ID}    ${None}
 @{DEVICE_NAMES}
 @{DEVICE_EUIS}
 ${COMMON_DELAY}    0
@@ -38,7 +40,7 @@ Go To Applications
     IF    '${res}'=='${False}'
         #Makes it viable only for the certain tenant.
         #Take that into account later on and do it via tenant name.
-        Go To    ${LOGIN_URL}/#/tenants/${ORG_ID}/applications    10s
+        Go To    ${LOGIN_URL}/#/tenants/${TENANT_ID}/applications    10s
         ${res}=    Is In Applications
     END
 
@@ -422,6 +424,22 @@ Log In
     Type Text    xpath\=//input[@id\="password"]    ${password}
     Click Text    Submit
 
+Get Tenant Id
+    [Documentation]    This Keyword tries to get
+    ...    specified tenant id from the web UI.
+    [Arguments]    ${tenant_name}
+    Set Config    Delay    1s
+    Go To    ${LOGIN_URL}/#/tenants    10s
+    Set Config    Delay    ${COMMON_DELAY}
+    #TODO
+    #Must be implemented as a table, but for what purpose are we going to use >10 tenants?
+    #Alright, alright... I will implement it, eventually.
+    Click Text    ${TENANT_NAME}    Name
+    ${tenant_id_string}=    Get Text    xpath\=//span[@class\="ant-page-header-heading-sub-title"]
+    ${tenant_id}=    Fetch From Right    ${tenant_id_string}    ${SPACE}
+    Set Global Variable    ${TENANT_ID}    ${tenant_id}
+
+
 Initialise
     #ConfigFileParser.py
     ${login_url}=    Get From Config File    LOGIN_URL
@@ -434,14 +452,15 @@ Initialise
     Set Global Variable    ${PASSWORD}    ${password}
     ${device_profile}=    Get From Config File    DEVICE_PROFILE
     Set Global Variable    ${DEVICE_PROFILE}    ${device_profile}
-    ${org_id}=    Get From Config File    TENANT_ID
-    Set Global Variable    ${ORG_ID}    ${org_id}
+    ${tenant_name}=    Get From Config File    TENANT_NAME
+    Set Global Variable    ${TENANT_NAME}    ${tenant_name}
     #/ConfigFileParser.py
-    Log To Console    \nConfig: ${LOGIN_URL} ${BROWSER} ${USERNAME} ${PASSWORD} ${DEVICE_PROFILE} ${ORG_ID}\n
+    Log To Console    \nConfig: ${LOGIN_URL} ${BROWSER} ${USERNAME} ${PASSWORD} ${DEVICE_PROFILE} ${TENANT_NAME}\n
     Start Browser    ${LOGIN_URL}    ${BROWSER}
 
     Set Config    Delay    ${COMMON_DELAY}
     Log In    ${USERNAME}    ${PASSWORD}
+    Get Tenant Id    ${TENANT_NAME}
     Initialise And Open Application Screen    ${APPLICATION}
 
 Start Browser

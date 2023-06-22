@@ -28,4 +28,4 @@ BROWSER:"Firefox"
 DEVICE_PROFILE:"Metropolia_devices"
 
 #Tenant id (can be found in Tenants)
-TENANT_ID:"52f14cd4-c6f1-4fbd-8f87-4025e1d49242"
+TENANT_NAME:"ChirpStack"
