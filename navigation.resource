@@ -394,6 +394,26 @@ Table Next
     Set Config    Delay    ${COMMON_DELAY}
     [Return]    ${switch_successful}
 
+Setup Application
+    [Documentation]    Creates the app.
+    [Arguments]    ${app_name}
+    Click Text    Add application
+    Verify Text    Description
+    Type Text    xpath\=//input[@id\="name"]    ${app_name}
+    Type Text    xpath\=//textarea[@id\="description"]    ${app_name}
+    Click Text    Submit
+
+Initialise And Open Application Screen
+    [Documentation]    Getting to the APPLICATION screen
+    [Arguments]    ${app_name}
+    ${res}=    Go To Applications
+    Run Keyword If    '${res}'=='${False}'    Fail    Failed to switch to applications screen
+    ${app_is_present}=    Applications Table Contains Name    ${app_name}
+    Run Keyword If    '${app_is_present}'=='${False}'    Setup Application    ${app_name}
+    Run Keyword If    '${app_is_present}'=='${False}'    Applications Table Contains Name    ${app_name}
+    Click Text    ${app_name}
+    Verify Text    Devices
+
 Log In
     [Documentation]    Tries to pass "Login" screen
     [Arguments]    ${username}    ${password}
@@ -403,6 +423,7 @@ Log In
     Click Text    Submit
 
 Initialise
+    #ConfigFileParser.py
     ${login_url}=    Get From Config File    LOGIN_URL
     Set Global Variable    ${LOGIN_URL}    ${login_url}
     ${browser}=    Get From Config File    BROWSER
@@ -415,8 +436,13 @@ Initialise
     Set Global Variable    ${DEVICE_PROFILE}    ${device_profile}
     ${org_id}=    Get From Config File    TENANT_ID
     Set Global Variable    ${ORG_ID}    ${org_id}
+    #/ConfigFileParser.py
     Log To Console    \nConfig: ${LOGIN_URL} ${BROWSER} ${USERNAME} ${PASSWORD} ${DEVICE_PROFILE} ${ORG_ID}\n
     Start Browser    ${LOGIN_URL}    ${BROWSER}
+
+    Set Config    Delay    ${COMMON_DELAY}
+    Log In    ${USERNAME}    ${PASSWORD}
+    Initialise And Open Application Screen    ${APPLICATION}
 
 Start Browser
     [Arguments]    ${url}    ${browser}

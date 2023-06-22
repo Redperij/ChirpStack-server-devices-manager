@@ -10,15 +10,10 @@ Task Teardown   Stop Browser
 
 *** Tasks ***
 Add Devices
-    Set Config    Delay    ${COMMON_DELAY}
-    
     #GoogleSpreadsheetParser.py
     &{d}=    Read Devices From Spreadsheet
     #/GoogleSpreadsheetParser.py
     Parse Devices Dictionary    &{d}
-
-    Log In    ${USERNAME}    ${PASSWORD}
-    Initialise And Open Application Screen    ${APPLICATION}
 
     Go To Application Devices    ${APPLICATION}
     
@@ -51,15 +46,11 @@ Add Devices
     END
 
 Delete Devices
-    Set Config    Delay    ${COMMON_DELAY}
-    
     #GoogleSpreadsheetParser.py
     &{d}=    Read Devices From Spreadsheet
     #/GoogleSpreadsheetParser.py
     Parse Devices Dictionary    &{d}
 
-    Log In    ${USERNAME}    ${PASSWORD}
-    Initialise And Open Application Screen    ${APPLICATION}
     Go To Application Devices    ${APPLICATION}
     
     ${dev_num}=    Get Length    ${DEVICE_NAMES}
@@ -71,9 +62,6 @@ Delete Devices
     END
 
 Delete All Devices
-    Set Config    Delay    ${COMMON_DELAY}
-    Log In    ${USERNAME}    ${PASSWORD}
-    Initialise And Open Application Screen    ${APPLICATION}
     Go To Application Devices    ${APPLICATION}
 
     Use Table    Name
@@ -85,9 +73,6 @@ Delete All Devices
     END
 
 Delete Application
-    Set Config    Delay    ${COMMON_DELAY}
-    Log In    ${USERNAME}    ${PASSWORD}
-    Initialise And Open Application Screen    ${APPLICATION}
     ${res}=    Go To Application Devices    ${APPLICATION}
 
     IF  '${res}'=='${True}'
@@ -103,31 +88,9 @@ Delete Application
 
 Test
     Set Config    Delay    0
-    Log In    ${USERNAME}    ${PASSWORD}
-    Initialise And Open Application Screen    ${APPLICATION}
     Go To Application    ${APPLICATION}
 
 *** Keywords ***
-Initialise And Open Application Screen
-    [Documentation]    Getting to the APPLICATION screen
-    [Arguments]    ${app_name}
-    ${res}=    Go To Applications
-    Run Keyword If    '${res}'=='${False}'    Fail    Failed to switch to applications screen
-    ${app_is_present}=    Applications Table Contains Name    ${app_name}
-    Run Keyword If    '${app_is_present}'=='${False}'    Setup Application    ${app_name}
-    Run Keyword If    '${app_is_present}'=='${False}'    Applications Table Contains Name    ${app_name}
-    Click Text    ${app_name}
-    Verify Text    Devices
-
-Setup Application
-    [Documentation]    Creates the app.
-    [Arguments]    ${app_name}
-    Click Text    Add application
-    Verify Text    Description
-    Type Text    xpath\=//input[@id\="name"]    ${app_name}
-    Type Text    xpath\=//textarea[@id\="description"]    ${app_name}
-    Click Text    Submit
-
 #Device naming convention:
 #Between apps: eui must be unique.
 #Inside an app: name and eui must be unique.
