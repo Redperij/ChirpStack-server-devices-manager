@@ -52,6 +52,10 @@ class GoogleSpreadsheetParser(object):
         error_cell = self._worksheet.find("ERROR")
         self._worksheet.update_cell(ind + 2, error_cell.col, "ERROR: device has corrupted eui (%s). Has to consist of 16 characters from \"0123456789abcdef\"" % (eui))
 
+    def write_wrong_name_error(self, ind, name):
+        error_cell = self._worksheet.find("ERROR")
+        self._worksheet.update_cell(ind + 2, error_cell.col, "ERROR: device has corrupted name (%s). Only alphanumeric characters are allowed." % name)
+
     def write_empty_error(self, ind, key):
         error_cell = self._worksheet.find("ERROR")
         self._worksheet.update_cell(ind + 2, error_cell.col, "ERROR: device has empty %s." % key)
@@ -67,7 +71,7 @@ class GoogleSpreadsheetParser(object):
         return return_val
 
     def verify_and_delete_duplicates(self, devices, euis):
-        #0. Empty indexes with empty fields.
+        #0. Clear indexes with empty fields.
         for i in range(0, len(euis)):
             if(euis[i] == ""):
                 self.write_empty_error(i, "eui")
@@ -79,15 +83,19 @@ class GoogleSpreadsheetParser(object):
                     euis[i] = ""
                     devices[i] = ""
 
-        #1. Empty indexes with incorrect euis.
+        #1. Clear indexes with incorrect euis and non-alphanumeric names
         for i in range(0, len(euis)):
             euis[i].lower()
             if((euis[i] != "") and (self.verify_eui(euis[i]) == False)):
                 self.write_wrong_eui_error(i, euis[i])
                 euis[i] = ""
                 devices[i] = ""
+            if((devices[i] != "") and (devices[i].isalnum() == False)):
+                self.write_wrong_name_error(i, devices[i])
+                euis[i] = ""
+                devices[i] = ""
         
-        #2. Empty indexes with duplicate euis.
+        #2. Clear indexes with duplicate euis.
         for i in range(0, len(euis) - 1):
             for q in range(i + 1, len(euis)):
                 if((euis[i] != "") and (euis[i] == euis[q])):
@@ -95,7 +103,7 @@ class GoogleSpreadsheetParser(object):
                     euis[q] = ""
                     devices[q] = ""
 
-        #3. Empty indexes with duplicate names.
+        #3. Clear indexes with duplicate names.
         for i in range(0, len(devices) - 1):
             for q in range(i + 1, len(devices)):
                 if((devices[i] != "") and (devices[i] == devices[q])):
