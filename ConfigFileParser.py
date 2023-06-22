@@ -18,9 +18,21 @@ class ConfigFileParser(object):
         raw_contents = raw_contents.splitlines()
 
         for i in range(0, len(raw_contents)):
-            ind = raw_contents[i].find("#")
-            if ind != -1:
-                raw_contents[i] = raw_contents[i][:ind]
+            ind = 0
+            found = False
+
+            while ind != -1 and found == False:
+                ind = raw_contents[i].find("#", ind + 1)
+                if ind == 0:
+                    raw_contents[i] = raw_contents[i][:ind]
+                    found = True
+                else:
+                    if ind != -1 and raw_contents[i][ind - 1] != '\\':
+                        raw_contents[i] = raw_contents[i][:ind]
+                        found = True
+                    else:
+                        if ind != -1 and raw_contents[i][ind - 1] == '\\':
+                            raw_contents[i] = raw_contents[i].replace("\\#", "#", 1)
 
         raw_key_pairs = []
         for line in raw_contents:
@@ -32,60 +44,27 @@ class ConfigFileParser(object):
     def get_from_config_file(self, key_name):
         rkp = self.get_raw_key_pairs()
         entry = None
+        value = None
         for pair in rkp:
             if(pair.find(key_name + ":") != -1):
                 entry = pair
                 break
-        key, value = entry.split(":", 1)
-        value = value.strip()
-        value = value[value.find("\"") + 1:value.rfind("\"")]
+        if entry != None:
+            key, value = entry.split(":", 1)
+            value = value.strip()
+            value = value[value.find("\"") + 1:value.rfind("\"")]
         return value
-    
 
-
-#inputfile = 'local.config'
-#
-#def get_raw_key_pairs():
-#    if not os.path.exists(inputfile):
-#        raise FileNotFoundError(inputfile)
-#
-#    ifile = open(inputfile, "r")
-#    raw_contents = ifile.read()
-#    raw_contents = raw_contents.splitlines()
-#
-#    for i in range(0, len(raw_contents)):
-#        ind = raw_contents[i].find("#")
-#        if ind != -1:
-#            raw_contents[i] = raw_contents[i][:ind]
-#
-#    raw_key_pairs = []
-#    for line in raw_contents:
-#        if line != '':
-#            raw_key_pairs.append(line)
-#
-#    return raw_key_pairs
-#
-#def get_from_config_file(key_name):
-#    rkp = get_raw_key_pairs()
-#    entry = None
-#    for pair in rkp:
-#        if(pair.find(key_name + ":") != -1):
-#            entry = pair
-#            break
-#    key, value = entry.split(":", 1)
-#    value = value.strip()
-#    value = value[value.find("\"") + 1:value.rfind("\"")]
-#    return value
-#
 #def main():
-#    print("Username: ", get_from_config_file("USERNAME"))
-#    print("Password: ", get_from_config_file("PASSWORD"))
-#    print("Email: ", get_from_config_file("EMAIL"))
-#    print("Login url: ", get_from_config_file("LOGIN_URL"))
-#    print("Browser: ", get_from_config_file("BROWSER"))
-#    print("App profile: ", get_from_config_file("APPLICATION_PROFILE"))
-#    print("Device profile: ", get_from_config_file("DEVICE_PROFILE"))
-#    print("Org id: ", get_from_config_file("ORGANIZATION_ID"))
+#    cfp = ConfigFileParser('local.config')
+#
+#    print("Username: ", cfp.get_from_config_file("USERNAME"))
+#    print("Password: ", cfp.get_from_config_file("PASSWORD"))
+#    print("Email: ", cfp.get_from_config_file("EMAIL"))
+#    print("Login url: ", cfp.get_from_config_file("LOGIN_URL"))
+#    print("Browser: ", cfp.get_from_config_file("BROWSER"))
+#    print("Device profile: ", cfp.get_from_config_file("DEVICE_PROFILE"))
+#    print("Tenant name: ", cfp.get_from_config_file("TENANT_NAME"))
 #
 #
 #if __name__ == "__main__":

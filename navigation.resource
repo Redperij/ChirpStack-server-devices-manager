@@ -4,6 +4,7 @@ Documentation    This resource file provides keywords
 ...              web UI for the LoraWan server.
 
 Library    Collections
+Library    String
 Library    QWeb
 Library    ConfigFileParser.py    ${CONFIG_FILENAME}
 Library    GoogleSpreadsheetParser.py    ${APPLICATION}    ${SHEET}
@@ -20,7 +21,8 @@ ${BROWSER}      Firefox
 ${USERNAME}     admin
 ${PASSWORD}     admin
 ${DEVICE_PROFILE}    Metropolia_devices
-${ORG_ID}    1
+${TENANT_NAME}    ChirpStack
+${TENANT_ID}    ${None}
 @{DEVICE_NAMES}
 @{DEVICE_EUIS}
 ${COMMON_DELAY}    0
@@ -34,74 +36,74 @@ ${COMMON_DELAY}    0
 Go To Applications
     [Documentation]    Opens "Applications" view.
     ...    Must be logged in to use this keyword.
-    ${res}=    Is In Applications
-    IF    '${res}'=='${False}'
+    ${f_is_in_apps}=    Is In Applications
+    IF    '${f_is_in_apps}'=='${False}'
         #Makes it viable only for the certain tenant.
         #Take that into account later on and do it via tenant name.
-        Go To    ${LOGIN_URL}/#/tenants/${ORG_ID}/applications    10s
-        ${res}=    Is In Applications
+        Go To    ${LOGIN_URL}/#/tenants/${TENANT_ID}/applications    10s
+        ${f_is_in_apps}=    Is In Applications
     END
 
-    [Return]    ${res}
+    [Return]    ${f_is_in_apps}
 
 Go To Application
     [Documentation]    Opens certain application view.
     [Arguments]    ${app_name}
-    ${is_in_app}=    Is In Application    ${app_name}
-    IF    '${is_in_app}'=='${False}'
-        ${is_in_apps}=    Go To Applications
-        IF  '${is_in_apps}'=='${True}'
-            ${app_is_present}=    Applications Table Contains Name    ${app_name}                
-            Run Keyword If    '${app_is_present}'=='${True}'    Click Text    ${app_name}
+    ${f_is_in_app}=    Is In Application    ${app_name}
+    IF    '${f_is_in_app}'=='${False}'
+        ${f_is_in_apps}=    Go To Applications
+        IF  '${f_is_in_apps}'=='${True}'
+            ${f_app_is_present}=    Applications Table Contains Name    ${app_name}                
+            Run Keyword If    '${f_app_is_present}'=='${True}'    Click Text    ${app_name}
         END
-        ${is_in_app}=    Is In Application    ${app_name}
+        ${f_is_in_app}=    Is In Application    ${app_name}
     END
-    [Return]    ${is_in_app}
+    [Return]    ${f_is_in_app}
 
 Go To Application Devices
     [Documentation]    Opens certain application's "Devices" view.
     [Arguments]    ${app_name}
-    ${res}=    Is In Application Devices    ${app_name}
-    IF    '${res}'=='${False}'
-        ${res}=    Go To Application    ${app_name}
-        Run Keyword If    '${res}'=='${True}'    Click Text    Devices    Multicast groups
-        ${res}=    Is In Application Devices    ${app_name}
+    ${f_is_in_app_devs}=    Is In Application Devices    ${app_name}
+    IF    '${f_is_in_app_devs}'=='${False}'
+        ${f_is_in_app}=    Go To Application    ${app_name}
+        Run Keyword If    '${f_is_in_app}'=='${True}'    Click Text    Devices    Multicast groups
+        ${f_is_in_app_devs}=    Is In Application Devices    ${app_name}
     END
-    [Return]    ${res}
+    [Return]    ${f_is_in_app_devs}
 
 Go To Application Device
     [Documentation]    Opens certain application's certain device view.
     [Arguments]    ${app_name}    ${eui}
-    ${res}=    Is In Application Device    ${app_name}    ${eui}
-    IF    '${res}'=='${False}'
-        ${res}=    Go To Application Devices    ${app_name}
-        ${res}=    Is Text    ${eui}
-        Run Keyword If    '${res}'=='${True}'    Click Text    ${eui}    Name
-        ${res}=    Is In Application Device    ${app_name}    ${eui}
+    ${f_is_in_app_dev}=    Is In Application Device    ${app_name}    ${eui}
+    IF    '${f_is_in_app_dev}'=='${False}'
+        ${f_is_in_app_devs}=    Go To Application Devices    ${app_name}
+        ${f_found_eui}=    Is Text    ${eui}
+        Run Keyword If    '${f_found_eui}'=='${True}'    Click Text    ${eui}    Name
+        ${f_is_in_app_dev}=    Is In Application Device    ${app_name}    ${eui}
     END
-    [Return]    ${res}
+    [Return]    ${f_is_in_app_dev}
 
 Go To Application Device Config
     [Documentation]    Opens specified device's configuration view.
     [Arguments]    ${app_name}    ${eui}
-    ${res}=    Is In Application Device Config    ${app_name}    ${eui}
-    IF    '${res}'=='${False}'
-        ${res}=    Go To Application Device    ${app_name}    ${eui}
-        Run Keyword If    '${res}'=='${True}'    Click Text    Configuration    OTAA keys
-        ${res}=    Is In Application Device Config    ${app_name}    ${eui}
+    ${f_is_in_app_dev_conf}=    Is In Application Device Config    ${app_name}    ${eui}
+    IF    '${f_is_in_app_dev_conf}'=='${False}'
+        ${f_is_in_app_dev}=    Go To Application Device    ${app_name}    ${eui}
+        Run Keyword If    '${f_is_in_app_dev}'=='${True}'    Click Text    Configuration    OTAA keys
+        ${f_is_in_app_dev_conf}=    Is In Application Device Config    ${app_name}    ${eui}
     END
-    [Return]    ${res}
+    [Return]    ${f_is_in_app_dev_conf}
 
 Go To Application Device Keys
     [Documentation]    Opens specified device's app-keys view.
     [Arguments]    ${app_name}    ${eui}
-    ${res}=    Is In Application Device Keys    ${app_name}    ${eui}
-    IF    '${res}'=='${False}'
-        ${res}=    Go To Application Device    ${app_name}    ${eui}
-        Run Keyword If    '${res}'=='${True}'    Click Text    OTAA keys    Configuration
-        ${res}=    Is In Application Device Keys    ${app_name}    ${eui}
+    ${f_is_in_app_dev_key}=    Is In Application Device Keys    ${app_name}    ${eui}
+    IF    '${f_is_in_app_dev_key}'=='${False}'
+        ${f_is_in_app_dev}=    Go To Application Device    ${app_name}    ${eui}
+        Run Keyword If    '${f_is_in_app_dev}'=='${True}'    Click Text    OTAA keys    Configuration
+        ${f_is_in_app_dev_key}=    Is In Application Device Keys    ${app_name}    ${eui}
     END
-    [Return]    ${res}
+    [Return]    ${f_is_in_app_dev_key}
 
 ####################################
 # IS IN ############################
@@ -111,60 +113,60 @@ Go To Application Device Keys
 Is In Applications
     [Documentation]    Identifies, whether we are
     ...    in the "Applications" view.
-    ${res1}=    Is Element    xpath\=//table[@style\="table-layout: auto;"]    1s
-    ${res2}=    Is Text    Add application
-    #What an utter crap. (res = res1 && res2)
-    ${res}=    Set Variable If    '${res1}'=='${True}' and '${res2}'=='${True}'    ${True}    ${False}
-    [Return]    ${res}
+    ${has_apps_table}=    Is Element    xpath\=//table[@style\="table-layout: auto;"]    1s
+    ${has_add_app_but}=    Is Text    Add application
+    #What an utter crap. (is_in_apps = has_apps_table && res2)
+    ${is_in_apps}=    Set Variable If    '${has_apps_table}'=='${True}' and '${has_add_app_but}'=='${True}'    ${True}    ${False}
+    [Return]    ${is_in_apps}
 
 Is In Application
     [Documentation]    Identifies, whether we are
     ...    in the certain "Application" view.
     [Arguments]    ${app_name}
-    ${res1}=    Is Text    ${app_name}    1s
-    ${res2}=    Is Text    Application configuration    1s
-    ${res}=    Set Variable If    '${res1}'=='${True}' and '${res2}'=='${True}'    ${True}    ${False}
-    [Return]    ${res}
+    ${has_app_name}=    Is Text    ${app_name}    1s
+    ${has_app_conf_but}=    Is Text    Application configuration    1s
+    ${is_in_app}=    Set Variable If    '${has_app_name}'=='${True}' and '${has_app_conf_but}'=='${True}'    ${True}    ${False}
+    [Return]    ${is_in_app}
 
 Is In Application Devices
     [Documentation]    Identifies, whether we are
     ...    in the application "Devices" view.
     [Arguments]    ${app_name}
-    ${res1}=    Is In Application    ${app_name}
-    ${res2}=    Is Text    Last seen    1s
-    ${res}=    Set Variable If    '${res1}'=='${True}' and '${res2}'=='${True}'    ${True}    ${False}
-    [Return]    ${res}
+    ${has_app_name}=    Is In Application    ${app_name}
+    ${has_last_seen_col}=    Is Text    Last seen    1s
+    ${is_in_app_devs}=    Set Variable If    '${has_app_name}'=='${True}' and '${has_last_seen_col}'=='${True}'    ${True}    ${False}
+    [Return]    ${is_in_app_devs}
 
 
 Is In Application Device
     [Documentation]    Identifies, whether we are
     ...    in the application certain "Device" view.
     [Arguments]    ${app_name}    ${eui}
-    ${res1}=    Is Text    ${app_name}    1s
-    ${res2}=    Is Text    ${eui}    1s
-    ${res3}=    Is Text    OTAA keys    1s
-    ${res}=    Set Variable If    '${res1}'=='${True}' and '${res2}'=='${True}' and '${res3}'=='${True}'    ${True}    ${False}
-    [Return]    ${res}
+    ${has_app_name}=    Is Text    ${app_name}    1s
+    ${has_eui}=    Is Text    ${eui}    1s
+    ${has_keys_but}=    Is Text    OTAA keys    1s
+    ${is_in_app_dev}=    Set Variable If    '${has_app_name}'=='${True}' and '${has_eui}'=='${True}' and '${has_keys_but}'=='${True}'    ${True}    ${False}
+    [Return]    ${is_in_app_dev}
 
 Is In Application Device Config
     [Documentation]    Identifies, whether we are
     ...    in the application certain device's "Configuration" view.
     [Arguments]    ${app_name}    ${eui}
-    ${res1}=    Is Text    ${app_name}    1s
-    ${res2}=    Is Text    ${eui}    1s
-    ${res3}=    Is Text    Variables    1s
-    ${res}=    Set Variable If    '${res1}'=='${True}' and '${res2}'=='${True}' and '${res3}'=='${True}'    ${True}    ${False}
-    [Return]    ${res}
+    ${has_app_name}=    Is Text    ${app_name}    1s
+    ${has_eui}=    Is Text    ${eui}    1s
+    ${has_var_but}=    Is Text    Variables    1s
+    ${is_in_app_dev_conf}=    Set Variable If    '${has_app_name}'=='${True}' and '${has_eui}'=='${True}' and '${has_var_but}'=='${True}'    ${True}    ${False}
+    [Return]    ${is_in_app_dev_conf}
 
 Is In Application Device Keys
     [Documentation]    Identifies, whether we are
     ...    in the application certain device's "Keys" view.
     [Arguments]    ${app_name}    ${eui}
-    ${res1}=    Is Text    ${app_name}    1s
-    ${res2}=    Is Text    ${eui}    1s
-    ${res3}=    Is Text    Application key    1s
-    ${res}=    Set Variable If    '${res1}'=='${True}' and '${res2}'=='${True}' and '${res3}'=='${True}'    ${True}    ${False}
-    [Return]    ${res}
+    ${has_app_name}=    Is Text    ${app_name}    1s
+    ${has_eui}=    Is Text    ${eui}    1s
+    ${has_app_key_text}=    Is Text    Application key    1s
+    ${is_in_app_dev_key}=    Set Variable If    '${has_app_name}'=='${True}' and '${has_eui}'=='${True}' and '${has_app_key_text}'=='${True}'    ${True}    ${False}
+    [Return]    ${is_in_app_dev_key}
 
 ####################################
 # DEVICES TABLE ####################
@@ -174,16 +176,16 @@ Is In Application Device Keys
 Devices Table Contains Eui
     [Documentation]    Checks whether table contains the specified eui.
     [Arguments]    ${app_name}    ${eui}    ${return}=${True}
-    ${res}=    Set Variable    ${False}
+    ${f_found_eui}=    Set Variable    ${False}
     ${table_end}=    Set Variable    ${False}
 
     Devices Table Switch To First Page    ${app_name}
     ${empty_table}=    Is Text    No Data    0.5s
 
     WHILE  '${table_end}'=='${False}' and '${empty_table}'!= '${True}'
-        ${res}=    Devices Table Sheet Contains Eui    ${eui}
+        ${f_found_eui}=    Devices Table Sheet Contains Eui    ${eui}
         #Go forward inside the table.
-        IF  '${res}'=='${False}'
+        IF  '${f_found_eui}'=='${False}'
             ${table_end}=    Table Next
             ${table_end}=    Evaluate    not ${table_end}
         ELSE
@@ -192,28 +194,28 @@ Devices Table Contains Eui
     END
     
     Run Keyword If    '${return}'=='${True}'    Devices Table Switch To First Page    ${app_name}
-    [Return]    ${res}
+    [Return]    ${f_found_eui}
 
 Devices Table Sheet Contains Eui
     [Documentation]    Checks a sheet of Devices table for the device with specified eui.
     [Arguments]    ${eui}
-    ${res}=    Set Variable    ${False}
-    ${res}=    Is Text    ${eui}    0.2s
-    [Return]    ${res}
+    ${eui_on_sheet}=    Set Variable    ${False}
+    ${eui_on_sheet}=    Is Text    ${eui}    0.2s
+    [Return]    ${eui_on_sheet}
 
 Devices Table Contains Name
     [Documentation]    Checks whether table contains the specified device name.
     [Arguments]    ${app_name}    ${device_name}    ${return}=${True}
-    ${res}=    Set Variable    ${False}
+    ${f_found_name}=    Set Variable    ${False}
     ${table_end}=    Set Variable    ${False}
 
     Devices Table Switch To First Page    ${app_name}
     ${empty_table}=    Is Text    No Data    0.5s
     
     WHILE  '${table_end}'=='${False}'
-        ${res}=    Devices Table Sheet Contains Name    ${device_name}
+        ${f_found_name}=    Devices Table Sheet Contains Name    ${device_name}
         #Go forward inside the table.
-        IF  '${res}'=='${False}' and '${empty_table}'!= '${True}'
+        IF  '${f_found_name}'=='${False}' and '${empty_table}'!= '${True}'
             ${table_end}=    Table Next
             ${table_end}=    Evaluate    not ${table_end}
         ELSE
@@ -221,19 +223,19 @@ Devices Table Contains Name
         END
     END
     Run Keyword If    '${return}'=='${True}'    Devices Table Switch To First Page    ${app_name}
-    [Return]    ${res}
+    [Return]    ${f_found_name}
 
 Devices Table Sheet Contains Name
     [Documentation]    Checks a sheet of Devices table for the device with specified name.
     [Arguments]    ${name}
-    ${res}=    Set Variable    ${False}
+    ${name_on_sheet}=    Set Variable    ${False}
 
     Use Table    Name
     FOR  ${i}  IN RANGE  ${TABLE_MAX_ROWS}
         TRY
             ${candidate}=    Get Cell Text    r?${name}/c?Name    ${i}    0.2s
             IF  '${candidate}'=='${name}'
-                ${res}=    Set Variable    ${True}
+                ${name_on_sheet}=    Set Variable    ${True}
                 BREAK
             END
         EXCEPT
@@ -241,7 +243,7 @@ Devices Table Sheet Contains Name
         END
     END
     
-    [Return]    ${res}
+    [Return]    ${name_on_sheet}
 
 Devices Table Sheet Get Name Row
     [Documentation]    Checks a sheet of Devices table for the device with specified name and gives its row.
@@ -270,7 +272,7 @@ Devices Table Get Corresponding Name
     [Documentation]    Gets a device name corresponding to the specified eui.
     [Arguments]    ${app_name}    ${eui}    ${return}=${True}    ${same_sheet}=${False}
     ${name}=    Set Variable    ${None}
-    ${res}=    Set Variable    ${False}
+    ${f_found_eui}=    Set Variable    ${False}
     ${table_end}=    Set Variable    ${False}
 
     Run Keyword If    '${same_sheet}'=='${False}'    Devices Table Switch To First Page    ${app_name}
@@ -278,9 +280,9 @@ Devices Table Get Corresponding Name
     ${empty_table}=    Is Text    No Data    0.5s
     
     WHILE  '${table_end}'=='${False}'
-        ${res}=    Devices Table Sheet Contains Eui    ${eui}
+        ${f_found_eui}=    Devices Table Sheet Contains Eui    ${eui}
         #Go forward inside the table.
-        IF  '${res}'=='${False}' and '${empty_table}'!= '${True}'
+        IF  '${f_found_eui}'=='${False}' and '${empty_table}'!= '${True}'
             ${table_end}=    Table Next
             ${table_end}=    Evaluate    not ${table_end}
         ELSE
@@ -296,7 +298,6 @@ Devices Table Get Corresponding Eui
     [Documentation]    Gets device eui corresponding to the first occurance of a specified name.
     [Arguments]    ${app_name}    ${dev_name}    ${return}=${True}    ${same_sheet}=${False}
     ${eui}=    Set Variable    ${None}
-    ${res}=    Set Variable    ${False}
     ${table_end}=    Set Variable    ${False}
 
     Run Keyword If    '${same_sheet}'=='${False}'    Devices Table Switch To First Page    ${app_name}
@@ -324,8 +325,8 @@ Devices Table Switch To First Page
     [Arguments]    ${app_name}
     Go To Applications
     Go To Application    ${app_name}
-    ${res}=    Go To Application Devices    ${app_name}
-    [Return]    ${res}
+    ${f_is_in_app_devices}=    Go To Application Devices    ${app_name}
+    [Return]    ${f_is_in_app_devices}
 
 ####################################
 # APPLICATIONS TABLE ###############
@@ -336,7 +337,7 @@ Devices Table Switch To First Page
 Applications Table Contains Name
     [Documentation]    Checks whether table contains the specified application name.
     [Arguments]    ${app_name}    ${return}=${False}
-    ${res}=    Set Variable    ${False}
+    ${f_found_app_name}=    Set Variable    ${False}
     ${table_end}=    Set Variable    ${False}
     ${arrow_index}=    Set Variable    ${2}
 
@@ -344,9 +345,9 @@ Applications Table Contains Name
     ${empty_table}=    Is Text    No Data    0.5s
     
     WHILE  '${table_end}'=='${False}'
-        ${res}=    Applications Table Sheet Contains Name    ${app_name}
+        ${f_found_app_name}=    Applications Table Sheet Contains Name    ${app_name}
         #Go forward inside the table.
-        IF  '${res}'=='${False}' and '${empty_table}'!= '${True}'
+        IF  '${f_found_app_name}'=='${False}' and '${empty_table}'!= '${True}'
             ${table_end}=    Table Next
             ${table_end}=    Evaluate    not ${table_end}
         ELSE
@@ -354,19 +355,19 @@ Applications Table Contains Name
         END
     END
     Run Keyword If    '${return}'=='${True}'    Go To Applications
-    [Return]    ${res}
+    [Return]    ${f_found_app_name}
 
 Applications Table Sheet Contains Name
     [Documentation]    Checks a sheet of Devices table for the device with specified name.
     [Arguments]    ${app_name}
-    ${res}=    Set Variable    ${False}
+    ${app_name_on_sheet}=    Set Variable    ${False}
 
     Use Table    Name
     FOR  ${i}  IN RANGE  ${TABLE_MAX_ROWS}
         TRY
             ${candidate}=    Get Cell Text    r?${app_name}/c1    ${i}    0.2s
             IF  '${candidate}'=='${app_name}'
-                ${res}=    Set Variable    ${True}
+                ${app_name_on_sheet}=    Set Variable    ${True}
                 BREAK
             END
         EXCEPT
@@ -374,7 +375,7 @@ Applications Table Sheet Contains Name
         END
     END
     
-    [Return]    ${res}
+    [Return]    ${app_name_on_sheet}
 
 ####################################
 # MISCELLANEOUS ####################
@@ -394,6 +395,26 @@ Table Next
     Set Config    Delay    ${COMMON_DELAY}
     [Return]    ${switch_successful}
 
+Setup Application
+    [Documentation]    Creates the app.
+    [Arguments]    ${app_name}
+    Click Text    Add application
+    Verify Text    Description
+    Type Text    xpath\=//input[@id\="name"]    ${app_name}
+    Type Text    xpath\=//textarea[@id\="description"]    ${app_name}
+    Click Text    Submit
+
+Initialise And Open Application Screen
+    [Documentation]    Getting to the APPLICATION screen
+    [Arguments]    ${app_name}
+    ${f_is_in_apps}=    Go To Applications
+    Run Keyword If    '${f_is_in_apps}'=='${False}'    Fail    Failed to switch to applications screen
+    ${app_is_present}=    Applications Table Contains Name    ${app_name}
+    Run Keyword If    '${app_is_present}'=='${False}'    Setup Application    ${app_name}
+    Run Keyword If    '${app_is_present}'=='${False}'    Applications Table Contains Name    ${app_name}
+    Click Text    ${app_name}
+    Verify Text    Devices
+
 Log In
     [Documentation]    Tries to pass "Login" screen
     [Arguments]    ${username}    ${password}
@@ -402,7 +423,24 @@ Log In
     Type Text    xpath\=//input[@id\="password"]    ${password}
     Click Text    Submit
 
+Get Tenant Id
+    [Documentation]    This Keyword tries to get
+    ...    specified tenant id from the web UI.
+    [Arguments]    ${tenant_name}
+    Set Config    Delay    1s
+    Go To    ${LOGIN_URL}/#/tenants    10s
+    Set Config    Delay    ${COMMON_DELAY}
+    #TODO
+    #Must be implemented as a table, but for what purpose are we going to use >10 tenants?
+    #Alright, alright... I will implement it, eventually.
+    Click Text    ${TENANT_NAME}    Name
+    ${tenant_id_string}=    Get Text    xpath\=//span[@class\="ant-page-header-heading-sub-title"]
+    ${tenant_id}=    Fetch From Right    ${tenant_id_string}    ${SPACE}
+    Set Global Variable    ${TENANT_ID}    ${tenant_id}
+
+
 Initialise
+    #ConfigFileParser.py
     ${login_url}=    Get From Config File    LOGIN_URL
     Set Global Variable    ${LOGIN_URL}    ${login_url}
     ${browser}=    Get From Config File    BROWSER
@@ -413,10 +451,16 @@ Initialise
     Set Global Variable    ${PASSWORD}    ${password}
     ${device_profile}=    Get From Config File    DEVICE_PROFILE
     Set Global Variable    ${DEVICE_PROFILE}    ${device_profile}
-    ${org_id}=    Get From Config File    TENANT_ID
-    Set Global Variable    ${ORG_ID}    ${org_id}
-    Log To Console    \nConfig: ${LOGIN_URL} ${BROWSER} ${USERNAME} ${PASSWORD} ${DEVICE_PROFILE} ${ORG_ID}\n
+    ${tenant_name}=    Get From Config File    TENANT_NAME
+    Set Global Variable    ${TENANT_NAME}    ${tenant_name}
+    #/ConfigFileParser.py
+    Log To Console    \nConfig: ${LOGIN_URL} ${BROWSER} ${USERNAME} ${PASSWORD} ${DEVICE_PROFILE} ${TENANT_NAME}\n
     Start Browser    ${LOGIN_URL}    ${BROWSER}
+
+    Set Config    Delay    ${COMMON_DELAY}
+    Log In    ${USERNAME}    ${PASSWORD}
+    Get Tenant Id    ${TENANT_NAME}
+    Initialise And Open Application Screen    ${APPLICATION}
 
 Start Browser
     [Arguments]    ${url}    ${browser}

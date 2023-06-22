@@ -10,15 +10,10 @@ Task Teardown   Stop Browser
 
 *** Tasks ***
 Add Devices
-    Set Config    Delay    ${COMMON_DELAY}
-    
     #GoogleSpreadsheetParser.py
     &{d}=    Read Devices From Spreadsheet
     #/GoogleSpreadsheetParser.py
     Parse Devices Dictionary    &{d}
-
-    Log In    ${USERNAME}    ${PASSWORD}
-    Initialise And Open Application Screen    ${APPLICATION}
 
     Go To Application Devices    ${APPLICATION}
     
@@ -51,29 +46,22 @@ Add Devices
     END
 
 Delete Devices
-    Set Config    Delay    ${COMMON_DELAY}
-    
     #GoogleSpreadsheetParser.py
     &{d}=    Read Devices From Spreadsheet
     #/GoogleSpreadsheetParser.py
     Parse Devices Dictionary    &{d}
 
-    Log In    ${USERNAME}    ${PASSWORD}
-    Initialise And Open Application Screen    ${APPLICATION}
     Go To Application Devices    ${APPLICATION}
     
     ${dev_num}=    Get Length    ${DEVICE_NAMES}
     FOR  ${i}  IN RANGE  ${dev_num}
         ${dev_eui}=    Get From List    ${DEVICE_EUIS}    ${i}
         Delete Device    ${APPLICATION}    ${dev_eui}
-        ${res}=    Devices Table Contains Eui    ${APPLICATION}    ${dev_eui}    ${False}
-        Run Keyword If    '${res}'=='${True}'    Fail    Was unable to delete device "${dev_eui}", aborting.
+        ${f_not_deleted}=    Devices Table Contains Eui    ${APPLICATION}    ${dev_eui}    ${False}
+        Run Keyword If    '${f_not_deleted}'=='${True}'    Fail    Was unable to delete device "${dev_eui}", aborting.
     END
 
 Delete All Devices
-    Set Config    Delay    ${COMMON_DELAY}
-    Log In    ${USERNAME}    ${PASSWORD}
-    Initialise And Open Application Screen    ${APPLICATION}
     Go To Application Devices    ${APPLICATION}
 
     Use Table    Name
@@ -85,12 +73,9 @@ Delete All Devices
     END
 
 Delete Application
-    Set Config    Delay    ${COMMON_DELAY}
-    Log In    ${USERNAME}    ${PASSWORD}
-    Initialise And Open Application Screen    ${APPLICATION}
-    ${res}=    Go To Application Devices    ${APPLICATION}
+    ${f_in_app_devices_to_delete_app}=    Go To Application Devices    ${APPLICATION}
 
-    IF  '${res}'=='${True}'
+    IF  '${f_in_app_devices_to_delete_app}'=='${True}'
         Click Text    Delete application
         Type Text    xpath\=//input[@placeholder\="${APPLICATION}"]    ${APPLICATION}
         Click Text    Delete    confirm you want to delete this application
@@ -103,31 +88,9 @@ Delete Application
 
 Test
     Set Config    Delay    0
-    Log In    ${USERNAME}    ${PASSWORD}
-    Initialise And Open Application Screen    ${APPLICATION}
     Go To Application    ${APPLICATION}
 
 *** Keywords ***
-Initialise And Open Application Screen
-    [Documentation]    Getting to the APPLICATION screen
-    [Arguments]    ${app_name}
-    ${res}=    Go To Applications
-    Run Keyword If    '${res}'=='${False}'    Fail    Failed to switch to applications screen
-    ${app_is_present}=    Applications Table Contains Name    ${app_name}
-    Run Keyword If    '${app_is_present}'=='${False}'    Setup Application    ${app_name}
-    Run Keyword If    '${app_is_present}'=='${False}'    Applications Table Contains Name    ${app_name}
-    Click Text    ${app_name}
-    Verify Text    Devices
-
-Setup Application
-    [Documentation]    Creates the app.
-    [Arguments]    ${app_name}
-    Click Text    Add application
-    Verify Text    Description
-    Type Text    xpath\=//input[@id\="name"]    ${app_name}
-    Type Text    xpath\=//textarea[@id\="description"]    ${app_name}
-    Click Text    Submit
-
 #Device naming convention:
 #Between apps: eui must be unique.
 #Inside an app: name and eui must be unique.
@@ -138,10 +101,10 @@ Add Device
     ...    for the specified app. Assigns app-key to the device and returns it.
     ...    Encountering a device with the same name and eui - deletes the device.
     [Arguments]    ${app_name}    ${name}    ${eui}    ${device_profile}
-    ${res}=    Is In Application Devices    ${app_name}
-    IF  '${res}'=='${False}'
-        ${res}=    Go To Application Devices    ${app_name}
-        Run Keyword If    '${res}'=='${False}'    Fail    Was unable to switch to the app devices screen to create a device.
+    ${f_is_in_app_devs}=    Is In Application Devices    ${app_name}
+    IF  '${f_is_in_app_devs}'=='${False}'
+        ${f_is_in_app_devs}=    Go To Application Devices    ${app_name}
+        Run Keyword If    '${f_is_in_app_devs}'=='${False}'    Fail    Was unable to switch to the app devices screen to create a device.
     END
 
     #Now we have to figure out if device exists.
@@ -195,8 +158,8 @@ Delete Device
     [Arguments]    ${app_name}    ${eui}    ${on_screen}=${False}
     Run Keyword If    '${on_screen}'=='${False}'    Devices Table Contains Eui    ${app_name}    ${eui}    ${False}
     ${name_to_delete}=    Devices Table Get Corresponding Name    ${app_name}    ${eui}    ${False}    ${True}
-    ${res}=    Go To Application Device    ${app_name}    ${eui}
-    IF  '${res}'=='${True}'
+    ${f_is_in_app_dev}=    Go To Application Device    ${app_name}    ${eui}
+    IF  '${f_is_in_app_dev}'=='${True}'
         Click Text    Delete device
         Type Text    xpath\=//input[@placeholder\="${name_to_delete}"]    ${name_to_delete}    clear_key={CONTROL + a}
         Click Text    Delete    to confirm you want to delete this
@@ -210,8 +173,8 @@ Update Device
     [Arguments]    ${app_name}    ${eui}    ${on_screen}=${False}
     Run Keyword If    '${on_screen}'=='${False}'    Devices Table Contains Eui    ${app_name}    ${eui}    ${False}
     #Need an eui in here.
-    ${res}=    Go To Application Device Keys    ${app_name}    ${eui}
-    IF  '${res}'=='${True}'
+    ${f_is_in_app_dev_key}=    Go To Application Device Keys    ${app_name}    ${eui}
+    IF  '${f_is_in_app_dev_key}'=='${True}'
         #Checking the app key.
         Verify Text    Application key
         TRY
@@ -232,8 +195,8 @@ Rename Device
     ...    Always returns view to the "Application Devices"
     [Arguments]    ${app_name}    ${old_name}    ${eui}    ${new_name}    ${device_profile}    ${on_screen}=${False}
     Run Keyword If    '${on_screen}'=='${False}'    Devices Table Contains Name    ${app_name}    ${old_name}    ${False}
-    ${res}=    Go To Application Device Config    ${app_name}    ${eui}
-    IF  '${res}'=='${True}'
+    ${f_is_in_app_dev_conf}=    Go To Application Device Config    ${app_name}    ${eui}
+    IF  '${f_is_in_app_dev_conf}'=='${True}'
         Type Text    xpath\=//input[@id\="name"]    ${new_name}    clear_key={CONTROL + a}
         Type Text    xpath\=//textarea[@id\="description"]    ${new_name}    clear_key={CONTROL + a}
         Set Config    Delay    0.5s
