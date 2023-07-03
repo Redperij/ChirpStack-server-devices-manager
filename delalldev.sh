@@ -23,3 +23,5 @@ then
 else
     echo "Using \"$worksheet\" from \"$spreadsheet\" table, with \"$config_file\" as a config file.";
 fi
+
+robot --task "Delete All Devices" -v APPLICATION:"$spreadsheet" -v SHEET:"$worksheet" -v CONFIG_FILENAME:"$config_file" ./commands.robot
