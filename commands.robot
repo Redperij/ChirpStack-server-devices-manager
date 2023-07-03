@@ -11,13 +11,20 @@ Task Teardown   Stop Browser
 *** Tasks ***
 Add Devices
     #GoogleSpreadsheetParser.py
-    &{d}=    Read Devices From Spreadsheet
+    IF  '${GSPREAD_INIT}'=='${True}'
+        &{d}=    Read Devices From Spreadsheet
+    ELSE
+        Fail    No key for gspread provided. Please, check if the private key file exists.
+    END
     #/GoogleSpreadsheetParser.py
+
     Parse Devices Dictionary    &{d}
 
     Go To Application Devices    ${APPLICATION}
     
     ${dev_num}=    Get Length    ${DEVICE_NAMES}
+    Run Keyword If    '${dev_num}'=='${0}'    Fail    Was unable to access provided spreadsheet or worksheet, or it was empty.
+
     @{app_keys}=    Create List
     FOR  ${i}  IN RANGE  ${dev_num}
         ${dev_name}=    Get From List    ${DEVICE_NAMES}    ${i}
@@ -47,13 +54,19 @@ Add Devices
 
 Delete Devices
     #GoogleSpreadsheetParser.py
-    &{d}=    Read Devices From Spreadsheet
+    IF  '${GSPREAD_INIT}'=='${True}'
+        &{d}=    Read Devices From Spreadsheet
+    ELSE
+        Fail    No key for gspread provided. Please, check if the private key file exists.
+    END
     #/GoogleSpreadsheetParser.py
     Parse Devices Dictionary    &{d}
 
     Go To Application Devices    ${APPLICATION}
     
     ${dev_num}=    Get Length    ${DEVICE_NAMES}
+    Run Keyword If    '${dev_num}'=='${0}'    Fail    Was unable to access provided spreadsheet or worksheet, or it was empty.
+
     FOR  ${i}  IN RANGE  ${dev_num}
         ${dev_eui}=    Get From List    ${DEVICE_EUIS}    ${i}
         Delete Device    ${APPLICATION}    ${dev_eui}

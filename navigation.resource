@@ -31,6 +31,7 @@ ${TENANT_ID}    ${None}
 @{DEVICE_EUIS}
 ${COMMON_DELAY}    0
 ${TABLE_MAX_ROWS}    ${100}
+${GSPREAD_INIT}    ${False}
 
 *** Keywords ***
 ####################################
@@ -465,7 +466,8 @@ Initialise
     Set Global Variable    ${TENANT_NAME}    ${tenant_name}
     #/ConfigFileParser.py
     Log To Console    \nConfig: ${LOGIN_URL} ${GSPREAD_FILENAME} ${APPLICATION} ${SHEET} ${BROWSER} ${USERNAME} ${PASSWORD} ${DEVICE_PROFILE} ${TENANT_NAME}\n
-    Initialise Google Spreadsheet Parser    ${APPLICATION}    ${SHEET}    ${GSPREAD_FILENAME}
+    ${gspread_init}=    Initialise Google Spreadsheet Parser    ${APPLICATION}    ${SHEET}    ${GSPREAD_FILENAME}
+    Set Global Variable    ${GSPREAD_INIT}    ${gspread_init}
     Start Browser    ${LOGIN_URL}    ${BROWSER}
 
     Set Config    Delay    ${COMMON_DELAY}

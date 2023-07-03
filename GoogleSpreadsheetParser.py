@@ -19,10 +19,13 @@ class GoogleSpreadsheetParser(object):
             self._f_req_init = False
         except:
             self._f_req_init = True
+            return False
  
         if(self._f_req_init == False):
             self._f_opened_spreadsheet = self.open_spreadsheet(spreadsheet_name)
             self._f_opened_worksheet = self.open_worksheet(worksheet_name)
+        
+        return True
 
     def open_spreadsheet(self, spreadsheet_name):
         try:
