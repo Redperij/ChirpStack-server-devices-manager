@@ -6,13 +6,13 @@ worksheet="Sheet1"
 #Help
 DisplayHelp()
 {
-    echo "USAGE: ./delapp.sh [OPTION]...";
-    echo "Deletes specified application from the server. (The same name as spreadsheet.)";
-    echo "Spreadsheet readability is not checked."
+    echo "USAGE: ./adddev.sh [OPTION]...";
+    echo "Adds valid devices from google spreadsheet to the devices table of LoRa server. Gives them app keys and writes them back into the spreadsheet.";
+    echo "Spreadsheet must have only 1 row header, which contains \"Device name\", \"EUI\" and \"ERROR\" column headers."
     echo "OPTIONS: [-h|s|w|c]";
     echo "-h    Display this message";
-    echo "-s    MANDATORY. App name to delete.";
-    echo "-w    Unused. Worksheet inside the spreadsheet to use. Defaults to \"Sheet1\".";
+    echo "-s    MANDATORY. Google spreadsheet name to extract devices from. This script will put extracted devices into the corresponding app on the server.";
+    echo "-w    Worksheet inside the spreadsheet to use. Defaults to \"Sheet1\"";
     echo "-c    Config file to use for other settings. Defaults to \"local.config\". Has to be located in the same folder as robot and python scripts."
 }
 
@@ -43,4 +43,4 @@ else
     echo "Using \"$worksheet\" from \"$spreadsheet\" table, with \"$config_file\" as a config file.";
 fi
 
-robot --task "Delete Application" -v APPLICATION:"$spreadsheet" -v SHEET:"$worksheet" -v CONFIG_FILENAME:"$config_file" ./commands.robot
+robot --task "Add Devices" -v APPLICATION:"$spreadsheet" -v SHEET:"$worksheet" -v CONFIG_FILENAME:"$config_file" ./commands.robot
