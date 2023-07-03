@@ -9,6 +9,11 @@
 #e-mail, configured through the console.cloud.google.com IAM, that has access to the google sheet and key.
 EMAIL:"name@orgname.iam.gserviceaccount.com"
 
+#File used by gspread to access the key for authentication.
+# Windows: [user]\AppData\Roaming\gspread
+# Linux: ~/.config/gspread
+GSPREAD_FILENAME:"service_account.json"
+
 ####################################
 # Robot framework related settings #
 ####################################

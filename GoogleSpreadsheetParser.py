@@ -6,11 +6,23 @@ class GoogleSpreadsheetParser(object):
     '''
     ROBOT_LIBRARY_SCOPE = "SUITE"
 
-    def __init__(self, spreadsheet_name, worksheet_name="Sheet1"):
-        self._service_account = gspread.service_account()
-        #self._spreadsheet = self._service_account.open(spreadsheet_name)
-        self._f_opened_spreadsheet = self.open_spreadsheet(spreadsheet_name)
-        self._f_opened_worksheet = self.open_worksheet(worksheet_name)
+    def __init__(self, spreadsheet_name, worksheet_name="Sheet1", gspread_filename="service_account.json"):
+        self._f_opened_spreadsheet = False
+        self._f_opened_worksheet = False
+        self._f_req_init = True
+        self.initialise_google_spreadsheet_parser(spreadsheet_name, worksheet_name, gspread_filename)
+    
+    def initialise_google_spreadsheet_parser(self, spreadsheet_name, worksheet_name="Sheet1", gspread_filename="service_account.json"):
+        try:
+            service_acc_path = gspread.auth.get_config_dir() / gspread_filename
+            self._service_account = gspread.service_account(service_acc_path)
+            self._f_req_init = False
+        except:
+            self._f_req_init = True
+ 
+        if(self._f_req_init == False):
+            self._f_opened_spreadsheet = self.open_spreadsheet(spreadsheet_name)
+            self._f_opened_worksheet = self.open_worksheet(worksheet_name)
 
     def open_spreadsheet(self, spreadsheet_name):
         try:
@@ -46,19 +58,19 @@ class GoogleSpreadsheetParser(object):
     
     def write_duplicate_error(self, key_name, orig_ind, dup_ind):
         error_cell = self._worksheet.find("ERROR")
-        self._worksheet.update_cell(dup_ind + 2, error_cell.col, "ERROR: device is a duplicate of device in a row %d. Same %s" % (orig_ind + 2, key_name))
+        self._worksheet.update_cell(dup_ind + 2, error_cell.col, "\"Device is a duplicate of device in a row %d. Same %s.\"" % (orig_ind + 2, key_name))
     
     def write_wrong_eui_error(self, ind, eui):
         error_cell = self._worksheet.find("ERROR")
-        self._worksheet.update_cell(ind + 2, error_cell.col, "ERROR: device has corrupted eui (%s). Has to consist of 16 characters from \"0123456789abcdef\"" % (eui))
+        self._worksheet.update_cell(ind + 2, error_cell.col, "\"Device has corrupted eui (%s). Has to consist of 16 characters from \"0123456789abcdef\".\"" % (eui))
 
     def write_wrong_name_error(self, ind, name):
         error_cell = self._worksheet.find("ERROR")
-        self._worksheet.update_cell(ind + 2, error_cell.col, "ERROR: device has corrupted name (%s). Only alphanumeric characters are allowed." % name)
+        self._worksheet.update_cell(ind + 2, error_cell.col, "\"Device has corrupted name (%s). Only alphanumeric characters are allowed.\"" % name)
 
     def write_empty_error(self, ind, key):
         error_cell = self._worksheet.find("ERROR")
-        self._worksheet.update_cell(ind + 2, error_cell.col, "ERROR: device has empty %s." % key)
+        self._worksheet.update_cell(ind + 2, error_cell.col, "\"Device has empty %s.\"" % key)
 
     def verify_eui(self, eui):
         return_val = True
@@ -120,6 +132,7 @@ class GoogleSpreadsheetParser(object):
 
     def read_devices_from_spreadsheet(self):
         if(self._f_opened_worksheet == False):
+           print("Unable to read spreadsheet")
            return None
 
         devices = self.get_list_of("Device name")
@@ -150,7 +163,7 @@ class GoogleSpreadsheetParser(object):
         return True
 
 #def main():
-#    sp = GoogleSpreadsheetParser("Devices1", "Main")
+#    sp = GoogleSpreadsheetParser("Devices1", "Main", "service_account.json")
 #    res_dictionary = sp.read_devices_from_spreadsheet()
 #
 #    print("Result:\n")

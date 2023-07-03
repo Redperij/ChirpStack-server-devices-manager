@@ -7,15 +7,17 @@ Library    Collections
 Library    String
 Library    QWeb
 Library    ConfigFileParser.py    ${CONFIG_FILENAME}
-Library    GoogleSpreadsheetParser.py    ${APPLICATION}    ${SHEET}
+Library    GoogleSpreadsheetParser.py    ${APPLICATION}    ${SHEET}    ${GSPREAD_FILENAME}
 
 *** Variables ***
 
+#Variables modified in the command line.
 ${CONFIG_FILENAME}    local.config
 ${APPLICATION}    Devices1
 ${SHEET}    Main
-${TABLE_MAX_ROWS}    ${100}
 
+#Variables modified by the config file.
+${GSPREAD_FILENAME}    service_account.json
 ${LOGIN_URL}    http://localhost:8080
 ${BROWSER}      Firefox
 ${USERNAME}     admin
@@ -23,9 +25,12 @@ ${PASSWORD}     admin
 ${DEVICE_PROFILE}    Metropolia_devices
 ${TENANT_NAME}    ChirpStack
 ${TENANT_ID}    ${None}
+
+#Robot Framework variables.
 @{DEVICE_NAMES}
 @{DEVICE_EUIS}
 ${COMMON_DELAY}    0
+${TABLE_MAX_ROWS}    ${100}
 
 *** Keywords ***
 ####################################
@@ -440,9 +445,14 @@ Get Tenant Id
 
 
 Initialise
+    [Documentation]    Does preparation for running the suite.
+    ...    Reads config file, logs into the web ui and
+    ...    initialises the app, if needed.
     #ConfigFileParser.py
     ${login_url}=    Get From Config File    LOGIN_URL
     Set Global Variable    ${LOGIN_URL}    ${login_url}
+    ${gspread_filename}=    Get From Config File    GSPREAD_FILENAME
+    Set Global Variable    ${GSPREAD_FILENAME}    ${gspread_filename}
     ${browser}=    Get From Config File    BROWSER
     Set Global Variable    ${BROWSER}    ${browser}
     ${username}=    Get From Config File    USERNAME
@@ -454,7 +464,8 @@ Initialise
     ${tenant_name}=    Get From Config File    TENANT_NAME
     Set Global Variable    ${TENANT_NAME}    ${tenant_name}
     #/ConfigFileParser.py
-    Log To Console    \nConfig: ${LOGIN_URL} ${BROWSER} ${USERNAME} ${PASSWORD} ${DEVICE_PROFILE} ${TENANT_NAME}\n
+    Log To Console    \nConfig: ${LOGIN_URL} ${GSPREAD_FILENAME} ${APPLICATION} ${SHEET} ${BROWSER} ${USERNAME} ${PASSWORD} ${DEVICE_PROFILE} ${TENANT_NAME}\n
+    Initialise Google Spreadsheet Parser    ${APPLICATION}    ${SHEET}    ${GSPREAD_FILENAME}
     Start Browser    ${LOGIN_URL}    ${BROWSER}
 
     Set Config    Delay    ${COMMON_DELAY}
