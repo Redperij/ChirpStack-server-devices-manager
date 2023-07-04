@@ -6,11 +6,30 @@ class GoogleSpreadsheetParser(object):
     '''
     ROBOT_LIBRARY_SCOPE = "SUITE"
 
-    def __init__(self, spreadsheet_name, worksheet_name="Sheet1"):
-        self._service_account = gspread.service_account()
-        #self._spreadsheet = self._service_account.open(spreadsheet_name)
-        self._f_opened_spreadsheet = self.open_spreadsheet(spreadsheet_name)
-        self._f_opened_worksheet = self.open_worksheet(worksheet_name)
+    def __init__(self, spreadsheet_name, worksheet_name="Sheet1", gspread_filename="service_account.json"):
+        self.error_column_text = "ERROR"
+        self.name_column_text = "Device name"
+        self.key_column_text = "App key"
+        self.eui_column_text = "EUI"
+        self._f_opened_spreadsheet = False
+        self._f_opened_worksheet = False
+        self._f_req_init = True
+        self.initialise_google_spreadsheet_parser(spreadsheet_name, worksheet_name, gspread_filename)
+    
+    def initialise_google_spreadsheet_parser(self, spreadsheet_name, worksheet_name="Sheet1", gspread_filename="service_account.json"):
+        try:
+            service_acc_path = gspread.auth.get_config_dir() / gspread_filename
+            self._service_account = gspread.service_account(service_acc_path)
+            self._f_req_init = False
+        except:
+            self._f_req_init = True
+            return False
+ 
+        if(self._f_req_init == False):
+            self._f_opened_spreadsheet = self.open_spreadsheet(spreadsheet_name)
+            self._f_opened_worksheet = self.open_worksheet(worksheet_name)
+        
+        return True
 
     def open_spreadsheet(self, spreadsheet_name):
         try:
@@ -45,20 +64,20 @@ class GoogleSpreadsheetParser(object):
         return res_list
     
     def write_duplicate_error(self, key_name, orig_ind, dup_ind):
-        error_cell = self._worksheet.find("ERROR")
-        self._worksheet.update_cell(dup_ind + 2, error_cell.col, "ERROR: device is a duplicate of device in a row %d. Same %s" % (orig_ind + 2, key_name))
+        error_cell = self._worksheet.find(self.error_column_text)
+        self._worksheet.update_cell(dup_ind + 2, error_cell.col, "\"Device is a duplicate of device in a row %d. Same %s.\"" % (orig_ind + 2, key_name))
     
     def write_wrong_eui_error(self, ind, eui):
-        error_cell = self._worksheet.find("ERROR")
-        self._worksheet.update_cell(ind + 2, error_cell.col, "ERROR: device has corrupted eui (%s). Has to consist of 16 characters from \"0123456789abcdef\"" % (eui))
+        error_cell = self._worksheet.find(self.error_column_text)
+        self._worksheet.update_cell(ind + 2, error_cell.col, "\"Device has corrupted eui (%s). Has to consist of 16 characters from \"0123456789abcdef\".\"" % (eui))
 
     def write_wrong_name_error(self, ind, name):
-        error_cell = self._worksheet.find("ERROR")
-        self._worksheet.update_cell(ind + 2, error_cell.col, "ERROR: device has corrupted name (%s). Only alphanumeric characters are allowed." % name)
+        error_cell = self._worksheet.find(self.error_column_text)
+        self._worksheet.update_cell(ind + 2, error_cell.col, "\"Device has corrupted name (%s). Only alphanumeric characters are allowed.\"" % name)
 
     def write_empty_error(self, ind, key):
-        error_cell = self._worksheet.find("ERROR")
-        self._worksheet.update_cell(ind + 2, error_cell.col, "ERROR: device has empty %s." % key)
+        error_cell = self._worksheet.find(self.error_column_text)
+        self._worksheet.update_cell(ind + 2, error_cell.col, "\"Device has empty %s.\"" % key)
 
     def verify_eui(self, eui):
         return_val = True
@@ -99,7 +118,7 @@ class GoogleSpreadsheetParser(object):
         for i in range(0, len(euis) - 1):
             for q in range(i + 1, len(euis)):
                 if((euis[i] != "") and (euis[i] == euis[q])):
-                    self.write_duplicate_error("EUI", i, q)
+                    self.write_duplicate_error(self.eui_column_text, i, q)
                     euis[q] = ""
                     devices[q] = ""
 
@@ -107,7 +126,7 @@ class GoogleSpreadsheetParser(object):
         for i in range(0, len(devices) - 1):
             for q in range(i + 1, len(devices)):
                 if((devices[i] != "") and (devices[i] == devices[q])):
-                    self.write_duplicate_error("Device name", i, q)
+                    self.write_duplicate_error(self.name_column_text, i, q)
                     euis[q] = ""
                     devices[q] = ""
         
@@ -120,10 +139,11 @@ class GoogleSpreadsheetParser(object):
 
     def read_devices_from_spreadsheet(self):
         if(self._f_opened_worksheet == False):
+           print("Unable to read spreadsheet")
            return None
 
-        devices = self.get_list_of("Device name")
-        euis = self.get_list_of("EUI")
+        devices = self.get_list_of(self.name_column_text)
+        euis = self.get_list_of(self.eui_column_text)
         self.verify_and_delete_duplicates(devices, euis)
         resdict = dict(zip(euis, devices))
         return resdict
@@ -132,25 +152,25 @@ class GoogleSpreadsheetParser(object):
         if(self._f_opened_worksheet == False):
             return False
         
-        app_key_cell = self._worksheet.find("App key")
-        error_cell = self._worksheet.find("ERROR")
+        app_key_cell = self._worksheet.find(self.key_column_text)
+        error_cell = self._worksheet.find(self.error_column_text)
 
         for eui in devices_dict:
             eui_cell = self._worksheet.find(eui)
             if(devices_dict[eui].find("ERROR:") != -1):
-                #trim "ERROR:" part and write message to the ERROR column.
+                #trim "ERROR:" part and write message to the error column.
                 err, devices_dict[eui] = devices_dict[eui].split(":", 1)
                 self._worksheet.update_cell(eui_cell.row, error_cell.col, devices_dict[eui])
                 self._worksheet.update_cell(eui_cell.row, app_key_cell.col, "")
             else:
-                #Write app key to the "App key" column.
+                #Write app key to the app key column.
                 self._worksheet.update_cell(eui_cell.row, error_cell.col, "")
                 self._worksheet.update_cell(eui_cell.row, app_key_cell.col, devices_dict[eui])
 
         return True
 
 #def main():
-#    sp = GoogleSpreadsheetParser("Devices1", "Main")
+#    sp = GoogleSpreadsheetParser("Devices1", "Main", "service_account.json")
 #    res_dictionary = sp.read_devices_from_spreadsheet()
 #
 #    print("Result:\n")
