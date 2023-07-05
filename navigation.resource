@@ -43,8 +43,9 @@ ${GSPREAD_INIT}    ${False}
 Go To Applications
     [Documentation]    Opens "Applications" view.
     ...    Must be logged in to use this keyword.
+    [Arguments]    ${force_switch}=${False}
     ${f_is_in_apps}=    Is In Applications
-    IF    '${f_is_in_apps}'=='${False}'
+    IF    '${f_is_in_apps}'=='${False}' or '${force_switch}'=='${True}'
         Go To    ${LOGIN_URL}/#/tenants/${TENANT_ID}/applications    10s
         ${f_is_in_apps}=    Is In Applications
     END
@@ -53,9 +54,9 @@ Go To Applications
 
 Go To Application
     [Documentation]    Opens certain application view.
-    [Arguments]    ${app_name}
+    [Arguments]    ${app_name}    ${force_switch}=${False}
     ${f_is_in_app}=    Is In Application    ${app_name}
-    IF    '${f_is_in_app}'=='${False}'
+    IF    '${f_is_in_app}'=='${False}' or '${force_switch}'=='${True}'
         ${f_is_in_apps}=    Go To Applications
         IF  '${f_is_in_apps}'=='${True}'
             ${f_app_is_present}=    Applications Table Contains Name    ${app_name}                
@@ -67,9 +68,9 @@ Go To Application
 
 Go To Application Devices
     [Documentation]    Opens certain application's "Devices" view.
-    [Arguments]    ${app_name}
+    [Arguments]    ${app_name}    ${force_switch}=${False}
     ${f_is_in_app_devs}=    Is In Application Devices    ${app_name}
-    IF    '${f_is_in_app_devs}'=='${False}'
+    IF    '${f_is_in_app_devs}'=='${False}' or '${force_switch}'=='${True}'
         ${f_is_in_app}=    Go To Application    ${app_name}
         Run Keyword If    '${f_is_in_app}'=='${True}'    Click Text    Devices    Multicast groups
         ${f_is_in_app_devs}=    Is In Application Devices    ${app_name}
@@ -78,9 +79,9 @@ Go To Application Devices
 
 Go To Application Device
     [Documentation]    Opens certain application's certain device view.
-    [Arguments]    ${app_name}    ${eui}
+    [Arguments]    ${app_name}    ${eui}    ${force_switch}=${False}
     ${f_is_in_app_dev}=    Is In Application Device    ${app_name}    ${eui}
-    IF    '${f_is_in_app_dev}'=='${False}'
+    IF    '${f_is_in_app_dev}'=='${False}' or '${force_switch}'=='${True}'
         ${f_is_in_app_devs}=    Go To Application Devices    ${app_name}
         ${f_found_eui}=    Is Text    ${eui}
         Run Keyword If    '${f_found_eui}'=='${True}'    Click Text    ${eui}    Name
@@ -90,9 +91,9 @@ Go To Application Device
 
 Go To Application Device Config
     [Documentation]    Opens specified device's configuration view.
-    [Arguments]    ${app_name}    ${eui}
+    [Arguments]    ${app_name}    ${eui}    ${force_switch}=${False}
     ${f_is_in_app_dev_conf}=    Is In Application Device Config    ${app_name}    ${eui}
-    IF    '${f_is_in_app_dev_conf}'=='${False}'
+    IF    '${f_is_in_app_dev_conf}'=='${False}' or '${force_switch}'=='${True}'
         ${f_is_in_app_dev}=    Go To Application Device    ${app_name}    ${eui}
         Run Keyword If    '${f_is_in_app_dev}'=='${True}'    Click Text    Configuration    OTAA keys
         ${f_is_in_app_dev_conf}=    Is In Application Device Config    ${app_name}    ${eui}
@@ -101,9 +102,9 @@ Go To Application Device Config
 
 Go To Application Device Keys
     [Documentation]    Opens specified device's app-keys view.
-    [Arguments]    ${app_name}    ${eui}
+    [Arguments]    ${app_name}    ${eui}    ${force_switch}=${False}
     ${f_is_in_app_dev_key}=    Is In Application Device Keys    ${app_name}    ${eui}
-    IF    '${f_is_in_app_dev_key}'=='${False}'
+    IF    '${f_is_in_app_dev_key}'=='${False}' or '${force_switch}'=='${True}'
         ${f_is_in_app_dev}=    Go To Application Device    ${app_name}    ${eui}
         Run Keyword If    '${f_is_in_app_dev}'=='${True}'    Click Text    OTAA keys    Configuration
         ${f_is_in_app_dev_key}=    Is In Application Device Keys    ${app_name}    ${eui}
@@ -184,7 +185,7 @@ Devices Table Contains Eui
     ${f_found_eui}=    Set Variable    ${False}
     ${table_end}=    Set Variable    ${False}
 
-    Devices Table Switch To First Page    ${app_name}
+    Go To Application Devices    ${app_name}    ${True}
     ${empty_table}=    Is Text    No Data    0.5s
 
     WHILE  '${table_end}'=='${False}' and '${empty_table}'!= '${True}'
@@ -198,7 +199,7 @@ Devices Table Contains Eui
         END
     END
     
-    Run Keyword If    '${return}'=='${True}'    Devices Table Switch To First Page    ${app_name}
+    Run Keyword If    '${return}'=='${True}'    Go To Application Devices    ${app_name}    ${True}
     [Return]    ${f_found_eui}
 
 Devices Table Sheet Contains Eui
@@ -214,7 +215,7 @@ Devices Table Contains Name
     ${f_found_name}=    Set Variable    ${False}
     ${table_end}=    Set Variable    ${False}
 
-    Devices Table Switch To First Page    ${app_name}
+    Go To Application Devices    ${app_name}    ${True}
     ${empty_table}=    Is Text    No Data    0.5s
     
     WHILE  '${table_end}'=='${False}'
@@ -227,7 +228,7 @@ Devices Table Contains Name
             ${table_end}=    Set Variable    ${True}
         END
     END
-    Run Keyword If    '${return}'=='${True}'    Devices Table Switch To First Page    ${app_name}
+    Run Keyword If    '${return}'=='${True}'    Go To Application Devices    ${app_name}    ${True}
     [Return]    ${f_found_name}
 
 Devices Table Sheet Contains Name
@@ -280,7 +281,7 @@ Devices Table Get Corresponding Name
     ${f_found_eui}=    Set Variable    ${False}
     ${table_end}=    Set Variable    ${False}
 
-    Run Keyword If    '${same_sheet}'=='${False}'    Devices Table Switch To First Page    ${app_name}
+    Run Keyword If    '${same_sheet}'=='${False}'    Go To Application Devices    ${app_name}    ${True}
     Use Table    Name
     ${empty_table}=    Is Text    No Data    0.5s
     
@@ -296,7 +297,7 @@ Devices Table Get Corresponding Name
             ${table_end}=    Set Variable    ${True}
         END
     END
-    Run Keyword If    '${return}'=='${True}'    Devices Table Switch To First Page    ${app_name}
+    Run Keyword If    '${return}'=='${True}'    Go To Application Devices    ${app_name}    ${True}
     [Return]    ${name}
 
 Devices Table Get Corresponding Eui
@@ -305,7 +306,7 @@ Devices Table Get Corresponding Eui
     ${eui}=    Set Variable    ${None}
     ${table_end}=    Set Variable    ${False}
 
-    Run Keyword If    '${same_sheet}'=='${False}'    Devices Table Switch To First Page    ${app_name}
+    Run Keyword If    '${same_sheet}'=='${False}'    Go To Application Devices    ${app_name}    ${True}
     Use Table    Name
     ${empty_table}=    Is Text    No Data    0.5s
     
@@ -321,17 +322,8 @@ Devices Table Get Corresponding Eui
             ${table_end}=    Set Variable    ${True}
         END
     END
-    Run Keyword If    '${return}'=='${True}'    Devices Table Switch To First Page    ${app_name}
+    Run Keyword If    '${return}'=='${True}'    Go To Application Devices    ${app_name}    ${True}
     [Return]    ${eui}
-
-Devices Table Switch To First Page
-    [Documentation]    Unconventionally swithces to the first page of devices table of specified application.
-    #Can be done simpler way now, I bet.
-    [Arguments]    ${app_name}
-    Go To Applications
-    Go To Application    ${app_name}
-    ${f_is_in_app_devices}=    Go To Application Devices    ${app_name}
-    [Return]    ${f_is_in_app_devices}
 
 ####################################
 # APPLICATIONS TABLE ###############
@@ -359,7 +351,7 @@ Applications Table Contains Name
             ${table_end}=    Set Variable    ${True}
         END
     END
-    Run Keyword If    '${return}'=='${True}'    Go To Applications
+    Run Keyword If    '${return}'=='${True}'    Go To Applications    ${True}
     [Return]    ${f_found_app_name}
 
 Applications Table Sheet Contains Name
@@ -391,11 +383,7 @@ Table Next
     ${switch_successful}=    Set Variable    ${False}
     Set Config    Delay    0.5s
     ${disabled_next}=    Get Element Count    xpath\=//li[@class\="ant-pagination-next ant-pagination-disabled"]    0.5s
-    #TODO
-    #Can be done only through IF.
-    IF    '${disabled_next}'=='${1}'
-        ${switch_successful}=    Set Variable    ${False}
-    ELSE
+    IF    '${disabled_next}'!='${1}'
         Click Element    xpath\=//button[@class\="ant-pagination-item-link"]    0.5s    False    2
         ${switch_successful}=    Set Variable    ${True}
     END
