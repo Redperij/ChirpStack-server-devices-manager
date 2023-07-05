@@ -44,6 +44,13 @@ Deleting all devices from the app:
 ```sh
 ./delalldev.sh -s "Devices1"
 ```
+If we want to delete some certain devices, we may create a separate worksheet and list those devices there.
+Let's say that "Fix_us" worksheet contains devices that we need to delete.
+This command will delete devices listed in "Fix_us" table from the Devices1 app.
+(Device deletion is EUI-specific, but python script still verifies if entered device is valid.)
+```sh
+./deldev.sh -s "Devices1" -w "Fix_us"
+```
 
 ## Additional information
 
