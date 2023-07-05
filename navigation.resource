@@ -38,14 +38,13 @@ ${GSPREAD_INIT}    ${False}
 # GO TO ############################
 ####################################
 #"Go To" keywords provide an easy way to switch to the needed view.
+#Every keyword always checks whether view is already opened.
 
 Go To Applications
     [Documentation]    Opens "Applications" view.
     ...    Must be logged in to use this keyword.
     ${f_is_in_apps}=    Is In Applications
     IF    '${f_is_in_apps}'=='${False}'
-        #Makes it viable only for the certain tenant.
-        #Take that into account later on and do it via tenant name.
         Go To    ${LOGIN_URL}/#/tenants/${TENANT_ID}/applications    10s
         ${f_is_in_apps}=    Is In Applications
     END
@@ -364,7 +363,7 @@ Applications Table Contains Name
     [Return]    ${f_found_app_name}
 
 Applications Table Sheet Contains Name
-    [Documentation]    Checks a sheet of Devices table for the device with specified name.
+    [Documentation]    Checks a sheet of Applications table for the application with specified name.
     [Arguments]    ${app_name}
     ${app_name_on_sheet}=    Set Variable    ${False}
 
@@ -387,7 +386,7 @@ Applications Table Sheet Contains Name
 # MISCELLANEOUS ####################
 ####################################
 Table Next
-    [Documentation]    Presses next page button
+    [Documentation]    Presses "next page" button
     ...    of the table, if possible.
     ${switch_successful}=    Set Variable    ${False}
     Set Config    Delay    0.5s

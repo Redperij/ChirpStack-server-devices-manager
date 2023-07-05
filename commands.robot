@@ -10,6 +10,8 @@ Task Teardown   Stop Browser
 
 *** Tasks ***
 Add Devices
+    [Documentation]    Reads spreadsheet and makes sure that all devices from the received list are created
+    ...    in the specified server application and that they all have app-keys, which are then written back into the spreadsheet.
     #GoogleSpreadsheetParser.py
     IF  '${GSPREAD_INIT}'=='${True}'
         &{d}=    Read Devices From Spreadsheet
@@ -53,6 +55,8 @@ Add Devices
     END
 
 Delete Devices
+    [Documentation]    Reads spreadsheet and makes sure to clear specified app devices table of all listed devices.
+    ...    Deletion is eui-specific, so we don't care about names.
     #GoogleSpreadsheetParser.py
     IF  '${GSPREAD_INIT}'=='${True}'
         &{d}=    Read Devices From Spreadsheet
@@ -75,6 +79,7 @@ Delete Devices
     END
 
 Delete All Devices
+    [Documentation]    Follows very simple algorithm of deleting the first entry in the table until it is empty.
     Go To Application Devices    ${APPLICATION}
 
     Use Table    Name
@@ -86,6 +91,8 @@ Delete All Devices
     END
 
 Delete Application
+    [Documentation]    Deletes the specified application from the server.
+    ...    The fastest way to clean the app of all devices is to delete it. :)
     ${f_in_app_devices_to_delete_app}=    Go To Application Devices    ${APPLICATION}
 
     IF  '${f_in_app_devices_to_delete_app}'=='${True}'
@@ -99,21 +106,13 @@ Delete Application
         Fail    Was unable to delete the "${APPLICATION}" app.
     END
 
-Test
-    Set Config    Delay    0
-    Go To Application    ${APPLICATION}
-
 *** Keywords ***
-#Device naming convention:
-#Between apps: eui must be unique.
-#Inside an app: name and eui must be unique.
-#TODO
-#Questionable wrong eui action
 Add Device
     [Documentation]    Adds a device with the specified name and eui
     ...    for the specified app. Assigns app-key to the device and returns it.
-    ...    Encountering a device with the same name and eui - deletes the device.
+    ...    Device naming convention: eui must be unique, but in our case we also try to keep the name unique inside the app.
     [Arguments]    ${app_name}    ${name}    ${eui}    ${device_profile}
+    #Moving to devices screen.
     ${f_is_in_app_devs}=    Is In Application Devices    ${app_name}
     IF  '${f_is_in_app_devs}'=='${False}'
         ${f_is_in_app_devs}=    Go To Application Devices    ${app_name}
@@ -142,20 +141,15 @@ Add Device
             #Device already exists
             ${app_key}=    Update Device    ${app_name}    ${eui}    ${True}
         END
-        
     ELSE
         ${same_name}=    Devices Table Contains Name    ${app_name}    ${name}    ${False}
         IF  '${same_name}'=='${True}'
             #Wrong eui
-            #RECURSION IN ROBOT FRAMEWORK!?
-            #YOU ARE BOLNOY CHELOVEK!
             #Theoretically, it will clean up the whole table of the same names. (Do I really need to?)
             ${dev_eui_to_delete}=    Devices Table Get Corresponding Eui    ${app_name}    ${name}    ${False}    ${True}
             Delete Device    ${app_name}    ${dev_eui_to_delete}    ${True}
+            #Yeah, it's recursion.
             ${app_key}=    Add Device    ${app_name}    ${name}    ${eui}    ${device_profile}
-
-            #Delete Device    ${app_name}    ${name}    ${True}
-            #${app_key}=    Create Device    ${name}    ${eui}    ${device_profile}
         ELSE
             #No such device
             ${app_key}=    Create Device    ${name}    ${eui}    ${device_profile}
@@ -185,10 +179,10 @@ Update Device
     ...    Always returns view to the "Application Devices"
     [Arguments]    ${app_name}    ${eui}    ${on_screen}=${False}
     Run Keyword If    '${on_screen}'=='${False}'    Devices Table Contains Eui    ${app_name}    ${eui}    ${False}
-    #Need an eui in here.
+
     ${f_is_in_app_dev_key}=    Go To Application Device Keys    ${app_name}    ${eui}
     IF  '${f_is_in_app_dev_key}'=='${True}'
-        #Checking the app key.
+        #Check the app key.
         Verify Text    Application key
         TRY
             ${app_key}=    Get Input Value    xpath\=//input[@id\="nwkKeyRender"]    1    1s
