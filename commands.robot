@@ -4,7 +4,7 @@ Documentation    Controlling the server interface with Robot Framework
 Resource    navigation.resource
 
 Task Setup      Initialise
-Task Teardown   Stop Browser
+Task Teardown   Close Browser
 
 *** Variables ***
 

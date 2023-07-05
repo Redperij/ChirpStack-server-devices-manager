@@ -391,6 +391,8 @@ Table Next
     ${switch_successful}=    Set Variable    ${False}
     Set Config    Delay    0.5s
     ${disabled_next}=    Get Element Count    xpath\=//li[@class\="ant-pagination-next ant-pagination-disabled"]    0.5s
+    #TODO
+    #Can be done only through IF.
     IF    '${disabled_next}'=='${1}'
         ${switch_successful}=    Set Variable    ${False}
     ELSE
@@ -467,16 +469,9 @@ Initialise
     Log To Console    \nConfig: ${LOGIN_URL} ${GSPREAD_FILENAME} ${APPLICATION} ${SHEET} ${BROWSER} ${USERNAME} ${PASSWORD} ${DEVICE_PROFILE} ${TENANT_NAME}\n
     ${gspread_init}=    Initialise Google Spreadsheet Parser    ${APPLICATION}    ${SHEET}    ${GSPREAD_FILENAME}
     Set Global Variable    ${GSPREAD_INIT}    ${gspread_init}
-    Start Browser    ${LOGIN_URL}    ${BROWSER}
+    Open Browser    ${LOGIN_URL}    ${BROWSER}
 
     Set Config    Delay    ${COMMON_DELAY}
     Log In    ${USERNAME}    ${PASSWORD}
     Get Tenant Id    ${TENANT_NAME}
     Initialise And Open Application Screen    ${APPLICATION}
-
-Start Browser
-    [Arguments]    ${url}    ${browser}
-    Open Browser    ${url}    ${browser}
-
-Stop Browser
-    Close Browser
