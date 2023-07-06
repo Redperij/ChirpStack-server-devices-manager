@@ -30,7 +30,7 @@ ${TENANT_ID}    ${None}
 @{DEVICE_NAMES}
 @{DEVICE_EUIS}
 ${COMMON_DELAY}    0
-${TABLE_MAX_ROWS}    ${100}
+${TABLE_MAX_ROWS}    ${101}
 ${GSPREAD_INIT}    ${False}
 
 *** Keywords ***
