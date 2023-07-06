@@ -40,6 +40,20 @@ ${GSPREAD_INIT}    ${False}
 #"Go To" keywords provide an easy way to switch to the needed view.
 #Every keyword always checks whether view is already opened.
 
+Go To Tenants
+    [Documentation]    Opens "Tenants" view.
+    ...    Must be logged in to use this keyword.
+    [Arguments]    ${force_switch}=${False}
+    ${f_is_in_tens}=    Is In Tenants
+    IF    '${f_is_in_tens}'=='${False}' or '${force_switch}'=='${True}'
+        Set Config    Delay    1s
+        Go To    ${LOGIN_URL}/#/tenants    10s
+        Set Config    Delay    ${COMMON_DELAY}
+        ${f_is_in_tens}=    Is In Tenants
+    END
+
+    [Return]    ${f_is_in_tens}
+
 Go To Applications
     [Documentation]    Opens "Applications" view.
     ...    Must be logged in to use this keyword.
@@ -115,6 +129,14 @@ Go To Application Device Keys
 # IS IN ############################
 ####################################
 #"Is In" keywords are used to identify the screen we are currently viewing.
+
+Is In Tenants
+    [Documentation]    Identifies, whether we are
+    ...    in the "Tenants" view.
+    ${has_tens_table}=    Is Element    xpath\=//table[@style\="table-layout: auto;"]    1s
+    ${has_add_ten_but}=    Is Text    Add tenant
+    ${is_in_tens}=    Set Variable If    '${has_tens_table}'=='${True}' and '${has_add_ten_but}'=='${True}'    ${True}    ${False}
+    [Return]    ${is_in_tens}
 
 Is In Applications
     [Documentation]    Identifies, whether we are
@@ -375,6 +397,55 @@ Applications Table Sheet Contains Name
     [Return]    ${app_name_on_sheet}
 
 ####################################
+# TENANTS TABLE ####################
+####################################
+#"Tenants Table" keywords provide more convinient
+# navigation through the table of tenants.
+
+Tenants Table Contains Name
+    [Documentation]    Checks whether table contains the specified tenant name.
+    [Arguments]    ${ten_name}    ${return}=${False}
+    ${f_found_ten_name}=    Set Variable    ${False}
+    ${table_end}=    Set Variable    ${False}
+    ${arrow_index}=    Set Variable    ${2}
+
+    Go To Tenants
+    ${empty_table}=    Is Text    No Data    0.5s
+    
+    WHILE  '${table_end}'=='${False}'
+        ${f_found_ten_name}=    Tenants Table Sheet Contains Name    ${ten_name}
+        #Go forward inside the table.
+        IF  '${f_found_ten_name}'=='${False}' and '${empty_table}'!= '${True}'
+            ${table_end}=    Table Next
+            ${table_end}=    Evaluate    not ${table_end}
+        ELSE
+            ${table_end}=    Set Variable    ${True}
+        END
+    END
+    Run Keyword If    '${return}'=='${True}'    Go To Tenants    ${True}
+    [Return]    ${f_found_ten_name}
+
+Tenants Table Sheet Contains Name
+    [Documentation]    Checks a sheet of Tenants table for the tenant with specified name.
+    [Arguments]    ${ten_name}
+    ${ten_name_on_sheet}=    Set Variable    ${False}
+
+    Use Table    Name
+    FOR  ${i}  IN RANGE  ${TABLE_MAX_ROWS}
+        TRY
+            ${candidate_ten}=    Get Cell Text    r?${ten_name}/c1    ${i}    0.2s
+            IF  '${candidate_ten}'=='${ten_name}'
+                ${ten_name_on_sheet}=    Set Variable    ${True}
+                BREAK
+            END
+        EXCEPT
+            BREAK
+        END
+    END
+    
+    [Return]    ${ten_name_on_sheet}
+
+####################################
 # MISCELLANEOUS ####################
 ####################################
 Table Next
@@ -422,12 +493,9 @@ Get Tenant Id
     [Documentation]    This Keyword tries to get
     ...    specified tenant id from the web UI.
     [Arguments]    ${tenant_name}
-    Set Config    Delay    1s
-    Go To    ${LOGIN_URL}/#/tenants    10s
-    Set Config    Delay    ${COMMON_DELAY}
-    #TODO
-    #Must be implemented as a table, but for what purpose are we going to use >10 tenants?
-    #Alright, alright... I will implement it, eventually.
+    Go To Tenants
+
+    Tenants Table Contains Name    ${TENANT_NAME}
     Click Text    ${TENANT_NAME}    Name
     ${tenant_id_string}=    Get Text    xpath\=//span[@class\="ant-page-header-heading-sub-title"]
     ${tenant_id}=    Fetch From Right    ${tenant_id_string}    ${SPACE}
