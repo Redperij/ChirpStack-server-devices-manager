@@ -254,8 +254,6 @@ Create Device
     #NOTE: If device (same eui) exists at least in one app - server won't allow us to create a device.
     #This is painful, since the only way to fix it would be to go through all apps and delete the device.
     #For now we will just fail.
-    #Implement try-catch on "Verify Text    Application key"
-    #Actually, it won't be a good solution, we really have to check if something messed up upon the creation.
     
     ${f_device_created}=    Is Text    Application key    1s
     IF  '${f_device_created}'=='${True}'

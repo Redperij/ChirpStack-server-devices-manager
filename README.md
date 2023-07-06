@@ -4,9 +4,9 @@ This repo holds the code for automating the process of setting up a device acces
 
 ## Features
 
-  - [Robot Framework](https://robotframework.org/) controlled navigation through [ChirpStack web UI v4.*](https://github.com/chirpstack/chirpstack).
+  - [Robot Framework ( >= v5.0)](https://robotframework.org/) controlled navigation through [ChirpStack web UI v4.*](https://github.com/chirpstack/chirpstack).
   - [QWeb](https://github.com/qentinelqi/qweb) is used for navigation through the web UI. It is very web UI specific, so only v4 of ChirpStack web UI is supported, and any small change in the UI may break things.
-  - Data extraction from [Google spreadsheets](https://docs.google.com/spreadsheets) using [gspread](https://docs.gspread.org/en).
+  - Data extraction from [Google spreadsheets](https://docs.google.com/spreadsheets) using [gspread](https://docs.gspread.org/en). Google has a nasty limit of 60 writes per minute for user, so python script has to wait a minute between every 60 writes.
   - Shell scripts to run robot scripts without too much hastle.
 
 ## Usage
@@ -17,7 +17,7 @@ After installing all needed dependencies you have to configure service account, 
 
 Then you need to copy [local.config.example](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/local.config.example) in the same directory and name it "local.config". Then you can change it to fit your needs. Also, if you would like to have different column names in your spreadsheet, you can change "*_column_text" variables in [GoogleSpreadsheetParser.py](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/GoogleSpreadsheetParser.py) script.
 
-After performing the configuration, you will be able to run one of the shell scripts ([adddev.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/adddev.sh), [deldev.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/deldev.sh), [delalldev.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/delalldev.sh), [delapp.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/delapp.sh).)
+After performing the configuration, you will be able to run one of the shell scripts ([adddev.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/adddev.sh), [deldev.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/deldev.sh), [delalldev.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/delalldev.sh), [delapp.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/delapp.sh), [dumpapp.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/dumpapp.sh))
 
   - -h option used to view the help message.
   - -s option is **mandatory**. It specifies the spreadsheet name to use as well as the app name on the server. Automation works so that application on the server is named acccording to the spreadsheet name.
@@ -26,10 +26,11 @@ After performing the configuration, you will be able to run one of the shell scr
 
 Scripts overview.
 
-  - [adddev.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/adddev.sh) script reads the specified spreadsheet, checks the validity of entries, configures devices on the server and writes app keys back to the spreadsheet. Application name on the server corresponds to the spreadsheet name, if there is no such app on the server, it will create one. It will not overwrite the existing devices (same name and eui), script will only take care of their app-keys, copying the existing ones or creating new keys, if the app-key field was blank.
-  - [deldev.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/deldev.sh) script reads the specified spreadsheet, checks the validity of entries and cleans the application table of the specified devices.
-  - [delalldev.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/delalldev.sh) script omits spreadsheet step and cleans the application table of all devices. -s specifies only the app name in this case.
-  - [delapp.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/delapp.sh) script omits spreadsheet step and deletes the application on the server. -s specifies only the app name in this case.
+  - [adddev.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/adddev.sh) reads the specified spreadsheet, checks the validity of entries, configures devices on the server and writes app keys back to the spreadsheet. Application name on the server corresponds to the spreadsheet name, if there is no such app on the server, it will create one. It will not overwrite the existing devices (same name and eui), script will only take care of their app-keys, copying the existing ones or creating new keys, if the app-key field was blank.
+  - [deldev.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/deldev.sh) reads the specified spreadsheet, checks the validity of entries and cleans the application table of the specified devices.
+  - [delalldev.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/delalldev.sh) omits spreadsheet step and cleans the application table of all devices. -s specifies only the app name in this case.
+  - [delapp.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/delapp.sh) omits spreadsheet step and deletes the application on the server. -s specifies only the app name in this case.
+  - [dumpapp.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/dumpapp.sh) get contents of the application devices table and writes names, euis and app-keys to the spreadsheet. **BE CAREFUL, CONTENTS OF THE WORKSHEET WILL BE LOST!** (Thus, -w option is **mandatory** for this specific script.)
 
 If you use Windows, then take a look at the last line of every script, it is exactly what you want to run, change the values given to variables (-v option) and run the command. Scripts don't handle mentioned actions on their own, it is done through the robot tasks and python scripts, so running the robot command directly has the same effect as running the shell script, which serves only as simplification of the robot command.
 
