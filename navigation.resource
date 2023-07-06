@@ -209,6 +209,7 @@ Devices Table Contains Eui
 
     Go To Application Devices    ${app_name}    ${True}
     ${empty_table}=    Is Text    No Data    0.5s
+    Run Keyword If    '${empty_table}'=='${False}'    Table Switch To 100
 
     WHILE  '${table_end}'=='${False}' and '${empty_table}'!= '${True}'
         ${f_found_eui}=    Devices Table Sheet Contains Eui    ${eui}
@@ -239,6 +240,7 @@ Devices Table Contains Name
 
     Go To Application Devices    ${app_name}    ${True}
     ${empty_table}=    Is Text    No Data    0.5s
+    Run Keyword If    '${empty_table}'=='${False}'    Table Switch To 100
     
     WHILE  '${table_end}'=='${False}'
         ${f_found_name}=    Devices Table Sheet Contains Name    ${device_name}
@@ -362,6 +364,7 @@ Applications Table Contains Name
 
     Go To Applications
     ${empty_table}=    Is Text    No Data    0.5s
+    Run Keyword If    '${empty_table}'=='${False}'    Table Switch To 100
     
     WHILE  '${table_end}'=='${False}'
         ${f_found_app_name}=    Applications Table Sheet Contains Name    ${app_name}
@@ -411,6 +414,7 @@ Tenants Table Contains Name
 
     Go To Tenants
     ${empty_table}=    Is Text    No Data    0.5s
+    Run Keyword If    '${empty_table}'=='${False}'    Table Switch To 100
     
     WHILE  '${table_end}'=='${False}'
         ${f_found_ten_name}=    Tenants Table Sheet Contains Name    ${ten_name}
@@ -460,6 +464,18 @@ Table Next
     END
     Set Config    Delay    ${COMMON_DELAY}
     [Return]    ${switch_successful}
+
+Table Switch To 100
+    [Documentation]    Should be called only from the page
+    ...    that contains table.
+    ...    Switches table rows to 100.
+    ${not100}=    Is No Text    100 / page
+    IF  '${not100}'=='${True}'
+        Set Config    Delay    1s
+        Click Text    10 / page
+        Click Text    100 / page
+        Set Config    Delay    ${COMMON_DELAY}
+    END
 
 Setup Application
     [Documentation]    Creates the app.
