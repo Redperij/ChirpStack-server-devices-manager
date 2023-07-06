@@ -116,6 +116,7 @@ Dump Application Contents
 
     #This can go to python.  
     Log To Console    ${contents_lol}
+    Dump To Spreadsheet    ${contents_lol}
     
 *** Keywords ***
 Add Device
