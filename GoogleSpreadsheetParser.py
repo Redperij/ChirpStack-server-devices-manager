@@ -1,4 +1,5 @@
 import os
+import time
 import gspread
 
 class GoogleSpreadsheetParser(object):
@@ -90,6 +91,7 @@ class GoogleSpreadsheetParser(object):
         return return_val
 
     def verify_and_delete_duplicates(self, devices, euis):
+        #I guess this can exceed quota, since 60> errors certainly is something unexpected.
         #0. Clear indexes with empty fields.
         for i in range(0, len(euis)):
             if(euis[i] == ""):
@@ -151,11 +153,18 @@ class GoogleSpreadsheetParser(object):
     def write_to_spreadsheet(self, devices_dict):
         if(self._f_opened_worksheet == False):
             return False
+        quota_crap = 0
         
         app_key_cell = self._worksheet.find(self.key_column_text)
         error_cell = self._worksheet.find(self.error_column_text)
 
         for eui in devices_dict:
+            #I hate it, but you have to pay not to wait this minute. (per user max is 60 requests/minute)
+            #Even funnier, there is overall write requests quota of 300 per minute.
+            if quota_crap >= 60:
+                time.sleep(60)
+                quota_crap = 0
+            
             eui_cell = self._worksheet.find(eui)
             if(devices_dict[eui].find("ERROR:") != -1):
                 #trim "ERROR:" part and write message to the error column.
@@ -166,7 +175,42 @@ class GoogleSpreadsheetParser(object):
                 #Write app key to the app key column.
                 self._worksheet.update_cell(eui_cell.row, error_cell.col, "")
                 self._worksheet.update_cell(eui_cell.row, app_key_cell.col, devices_dict[eui])
+            quota_crap += 2
 
+        return True
+
+    def dump_to_spreadsheet(self, list_of_lists):
+        if(self._f_opened_worksheet == False):
+            return False
+        quota_crap = 0
+
+        #eui_col = 1
+        #name_col = 0
+        #key_col = 2
+        #euis_l = list_of_lists[0]
+        #names_l = list_of_lists[1]
+        #keys_l = list_of_lists[2]
+
+        contents_col = [2, 1, 3]
+
+        self._worksheet.clear()
+        self._worksheet.update_cell(1, contents_col[0], self.eui_column_text)
+        self._worksheet.update_cell(1, contents_col[1], self.name_column_text)
+        self._worksheet.update_cell(1, contents_col[2], self.key_column_text)
+
+        for i in range(3):
+            q = 2
+            for item in list_of_lists[i]:
+                #I hate it, but you have to pay not to wait this minute. (per user max is 60 requests)
+                #Even funnier, there is overall write requests quota of 300 per minute.
+                if quota_crap >= 60:
+                    time.sleep(60)
+                    quota_crap = 0
+                
+                self._worksheet.update_cell(q, contents_col[i], item)
+                quota_crap += 1
+                q += 1
+    
         return True
 
 #def main():

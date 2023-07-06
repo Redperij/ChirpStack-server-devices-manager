@@ -16,7 +16,7 @@ Add Devices
     IF  '${GSPREAD_INIT}'=='${True}'
         &{d}=    Read Devices From Spreadsheet
     ELSE
-        Fail    No key for gspread provided. Please, check if the private key file exists.
+        Fail    Was unable to reach google spreadsheet..
     END
     #/GoogleSpreadsheetParser.py
 
@@ -45,6 +45,7 @@ Add Devices
 
     Log To Console    Updating the ${APPLICATION} spreadsheet.
     #GoogleSpreadsheetParser.py
+    Log To Console    Do not be afraid of 60 second freezes, script is waiting for reset of google quota.
     ${f_written_to_spreadsheet}=    Write To Spreadsheet    ${d}
     #/GoogleSpreadsheetParser.py
     
@@ -61,7 +62,7 @@ Delete Devices
     IF  '${GSPREAD_INIT}'=='${True}'
         &{d}=    Read Devices From Spreadsheet
     ELSE
-        Fail    No key for gspread provided. Please, check if the private key file exists.
+        Fail    Was unable to reach google spreadsheet..
     END
     #/GoogleSpreadsheetParser.py
     Parse Devices Dictionary    &{d}
@@ -106,6 +107,19 @@ Delete Application
         Fail    Was unable to delete the "${APPLICATION}" app.
     END
 
+Dump Application Contents
+    [Documentation]    Dumps application contents to the
+    ...    Google spreadsheet.
+    Run Keyword If  '${GSPREAD_INIT}'=='${False}'    Fail    Was unable to reach google spreadsheet.
+    
+    @{contents_lol}=    Create List
+    ${contents_lol}=    Dump Devices Table Contents    ${APPLICATION}
+
+    #This can go to python.  
+    Log To Console    ${contents_lol}
+    Log To Console    Do not be afraid of 60 second freezes, script is waiting for reset of google quota.
+    Dump To Spreadsheet    ${contents_lol}
+    
 *** Keywords ***
 Add Device
     [Documentation]    Adds a device with the specified name and eui
@@ -240,8 +254,6 @@ Create Device
     #NOTE: If device (same eui) exists at least in one app - server won't allow us to create a device.
     #This is painful, since the only way to fix it would be to go through all apps and delete the device.
     #For now we will just fail.
-    #Implement try-catch on "Verify Text    Application key"
-    #Actually, it won't be a good solution, we really have to check if something messed up upon the creation.
     
     ${f_device_created}=    Is Text    Application key    1s
     IF  '${f_device_created}'=='${True}'
@@ -260,6 +272,82 @@ Generate App Key
     ${app_key}=    Get Input Value    xpath\=//input[@id\="nwkKeyRender"]
     Click Text    Submit
     [Return]    ${app_key}
+
+Dump Devices Table Contents
+    [Documentation]    Dumps devices table contents to list
+    ...    of lists. [0] Names, [1] EUIs, [2] app-keys.
+    [Arguments]    ${app_name}
+    @{contents_lol}=    Create List
+    @{euis_l}=    Create List
+    @{names_l}=    Create List
+    @{keys_l}=    Create List
+    Go To Application Devices    ${app_name}
+    Use Table    Name
+    
+    ${euis_l}=    Dump All Euis    ${app_name}
+    Append To List    ${contents_lol}    ${euis_l}
+    Go To Application Devices    ${app_name}    ${True}
+    
+    ${names_l}=    Dump All Names    ${app_name}    ${euis_l}
+    Append To List    ${contents_lol}    ${names_l}
+    Go To Application Devices    ${app_name}    ${True}
+    
+    ${keys_l}=    Dump All Keys    ${app_name}    ${euis_l}
+    Append To List    ${contents_lol}    ${keys_l}
+
+    [Return]    ${contents_lol}
+
+Dump All Euis
+    [Documentation]    Dumps all app devices table euis to the list.
+    [Arguments]    ${app_name}
+    ${table_end}=    Set Variable    ${False}
+    @{euis_l}=    Create List
+    Go To Application Devices    ${app_name}
+    Use Table    Name
+    
+    ${empty_table}=    Is Text    No Data    0.5s
+    Run Keyword If    '${empty_table}'=='${False}'    Table Switch To 100
+    
+    WHILE  '${table_end}'=='${False}'
+        #Dump Sheet
+        FOR  ${i}  IN RANGE  ${2}  ${TABLE_MAX_ROWS}
+            TRY
+                ${eui}=    Get Cell Text    r${i}/c3    0.2s
+                Append To List    ${euis_l}    ${eui}
+            EXCEPT
+                BREAK
+            END
+        END
+        #Go forward inside the table.
+        IF  '${empty_table}'!= '${True}'
+            ${table_end}=    Table Next
+            ${table_end}=    Evaluate    not ${table_end}
+        ELSE
+            ${table_end}=    Set Variable    ${True}
+        END
+    END
+
+    [Return]    ${euis_l}
+
+Dump All Names
+    [Documentation]    Dumps all app devices table names to the list.
+    [Arguments]    ${app_name}    ${euis_l}
+    @{names_l}=    Create List
+    FOR  ${eui}  IN  @{euis_l}
+        ${name}=    Devices Table Get Corresponding Name    ${app_name}    ${eui}
+        Append To List    ${names_l}    ${name}
+    END
+    [Return]    ${names_l}
+
+Dump All Keys
+    [Documentation]    Dumps all app devices table app-keys to the list.
+    [Arguments]    ${app_name}    ${euis_l}
+    @{keys_l}=    Create List
+    FOR  ${eui}  IN  @{euis_l}
+        ${app_key}=    Update Device    ${app_name}    ${eui}
+        Append To List    ${keys_l}    ${app_key}
+    END
+    [Return]    ${keys_l}
 
 Parse Devices Dictionary
     [Arguments]    &{dict}
