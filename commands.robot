@@ -45,6 +45,7 @@ Add Devices
 
     Log To Console    Updating the ${APPLICATION} spreadsheet.
     #GoogleSpreadsheetParser.py
+    Log To Console    Do not be afraid of 60 second freezes, script is waiting for reset of google quota.
     ${f_written_to_spreadsheet}=    Write To Spreadsheet    ${d}
     #/GoogleSpreadsheetParser.py
     
@@ -116,6 +117,7 @@ Dump Application Contents
 
     #This can go to python.  
     Log To Console    ${contents_lol}
+    Log To Console    Do not be afraid of 60 second freezes, script is waiting for reset of google quota.
     Dump To Spreadsheet    ${contents_lol}
     
 *** Keywords ***
@@ -312,7 +314,6 @@ Dump All Euis
         #Dump Sheet
         FOR  ${i}  IN RANGE  ${2}  ${TABLE_MAX_ROWS}
             TRY
-                Log To Console    Getting ${i} row.
                 ${eui}=    Get Cell Text    r${i}/c3    0.2s
                 Append To List    ${euis_l}    ${eui}
             EXCEPT
