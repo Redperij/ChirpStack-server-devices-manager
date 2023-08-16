@@ -106,7 +106,7 @@ class GoogleSpreadsheetParser(object):
 
         #1. Clear indexes with incorrect euis and non-alphanumeric names
         for i in range(0, len(euis)):
-            euis[i].lower()
+            euis[i] = euis[i].lower()
             if((euis[i] != "") and (self.verify_eui(euis[i]) == False)):
                 self.write_wrong_eui_error(i, euis[i])
                 euis[i] = ""
@@ -165,7 +165,7 @@ class GoogleSpreadsheetParser(object):
                 time.sleep(60)
                 quota_crap = 0
             
-            eui_cell = self._worksheet.find(eui)
+            eui_cell = self._worksheet.find(eui, case_sensitive=False)
             if(devices_dict[eui].find("ERROR:") != -1):
                 #trim "ERROR:" part and write message to the error column.
                 err, devices_dict[eui] = devices_dict[eui].split(":", 1)
