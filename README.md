@@ -15,12 +15,12 @@ First of all you need [python3](https://www.python.org/downloads/) on your devic
 
 After installing all needed dependencies you have to configure service account, which will be used by [gspread](https://docs.gspread.org/en) to access the spreadsheet. To do it, please, follow [this guide](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/documentation/gspread_setup_guide.pdf).
 
-Then you need to copy [local.config.example](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/local.config.example) in the same directory and name it "local.config". Then you can change it to fit your needs. Also, if you would like to have different column names in your spreadsheet, you can change "*_column_text" variables in [GoogleSpreadsheetParser.py](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/GoogleSpreadsheetParser.py) script.
+You need to copy [local.config.example](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/local.config.example) in the same directory and name it "local.config". Then you can change it to fit your needs. Also, if you would like to have different column names in your spreadsheet, you can change "*_column_text" variables in [GoogleSpreadsheetParser.py](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/GoogleSpreadsheetParser.py) script.
 
 After performing the configuration, you will be able to run one of the shell scripts ([adddev.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/adddev.sh), [deldev.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/deldev.sh), [delalldev.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/delalldev.sh), [delapp.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/delapp.sh), [dumpapp.sh](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/dumpapp.sh))
 
   - -h option used to view the help message.
-  - -s option is **mandatory**. It specifies the spreadsheet name to use as well as the app name on the server. Automation works so that application on the server is named acccording to the spreadsheet name.
+  - -s option is **mandatory**. It specifies the spreadsheet name to use as well as the app name on the server. Automation works so that application on the server is named according to the spreadsheet name.
   - -w option specifies the worksheet to use, (sheets of your spreadsheet.) Defaults to "Sheet1".
   - -c option specifies the config filename. In case if you want to use different config files. Defaults to "local.config".
 
