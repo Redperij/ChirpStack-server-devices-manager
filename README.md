@@ -6,12 +6,12 @@ This repo holds the code for automating the process of setting up a device acces
 
   - [Robot Framework ( >= v5.0)](https://robotframework.org/) controlled navigation through [ChirpStack web UI v4.*](https://github.com/chirpstack/chirpstack).
   - [QWeb](https://github.com/qentinelqi/qweb) is used for navigation through the web UI. It is very web UI specific, so only v4 of ChirpStack web UI is supported, and any small change in the UI may break things.
-  - Data extraction from [Google spreadsheets](https://docs.google.com/spreadsheets) using [gspread](https://docs.gspread.org/en). Google has a nasty limit of 60 writes per minute for user, so python script has to wait a minute between every 60 writes.
+  - Data extraction from [Google spreadsheets](https://docs.google.com/spreadsheets) using [gspread](https://docs.gspread.org/en) and [regex](https://pypi.org/project/regex/). Google has a nasty limit of 60 writes per minute for user, so python script has to wait a minute between every 60 writes.
   - Shell scripts to run robot scripts without too much hastle.
 
 ## Usage
 
-First of all you need [python3](https://www.python.org/downloads/) on your device. Then scripts will require [Robot Framework](https://robotframework.org/) installation with [QWeb](https://github.com/qentinelqi/qweb), as well as [gspread](https://docs.gspread.org/en) for python scripts.
+First of all you need [python3](https://www.python.org/downloads/) on your device. Then scripts will require [Robot Framework](https://robotframework.org/) installation with [QWeb](https://github.com/qentinelqi/qweb), as well as [gspread](https://docs.gspread.org/en) and [regex](https://pypi.org/project/regex/) for python scripts.
 
 After installing all needed dependencies you have to configure service account, which will be used by [gspread](https://docs.gspread.org/en) to access the spreadsheet. To do it, please, follow [this guide](https://github.com/Redperij/ChirpStack-server-devices-manager/blob/main/documentation/gspread_setup_guide.pdf).
 

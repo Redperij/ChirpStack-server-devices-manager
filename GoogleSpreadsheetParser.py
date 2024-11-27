@@ -1,6 +1,7 @@
 import os
 import time
 import gspread
+import regex as re
 
 class GoogleSpreadsheetParser(object):
     '''Library for reading and parsing the google spreadsheet for Lora Wan server automation.
@@ -165,7 +166,9 @@ class GoogleSpreadsheetParser(object):
                 time.sleep(60)
                 quota_crap = 0
             
-            eui_cell = self._worksheet.find(eui, case_sensitive=False)
+            # Find column by EUI. Looks for a string match inside of the column value
+            # to be delimited by empty strings or whitespaces.
+            eui_cell = self._worksheet.find(re.compile(rf"(\b|\s){eui}(\b|\s)", re.IGNORECASE), case_sensitive=False)
             if(devices_dict[eui].find("ERROR:") != -1):
                 #trim "ERROR:" part and write message to the error column.
                 err, devices_dict[eui] = devices_dict[eui].split(":", 1)
